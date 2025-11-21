@@ -14,7 +14,182 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      appliances: {
+        Row: {
+          brand: string | null
+          created_at: string
+          id: string
+          model: string | null
+          name: string
+          property_id: string
+          purchase_date: string | null
+          status: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          brand?: string | null
+          created_at?: string
+          id?: string
+          model?: string | null
+          name: string
+          property_id: string
+          purchase_date?: string | null
+          status?: string | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          brand?: string | null
+          created_at?: string
+          id?: string
+          model?: string | null
+          name?: string
+          property_id?: string
+          purchase_date?: string | null
+          status?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appliances_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diagnostics: {
+        Row: {
+          appliance_id: string | null
+          created_at: string
+          description: string | null
+          diagnosis_summary: string | null
+          estimated_cost_max: number | null
+          estimated_cost_min: number | null
+          file_url: string | null
+          fix_instructions: string | null
+          id: string
+          input_type: string
+          probable_causes: string[] | null
+          property_id: string | null
+          scam_alerts: string[] | null
+          urgency: string | null
+          user_id: string
+        }
+        Insert: {
+          appliance_id?: string | null
+          created_at?: string
+          description?: string | null
+          diagnosis_summary?: string | null
+          estimated_cost_max?: number | null
+          estimated_cost_min?: number | null
+          file_url?: string | null
+          fix_instructions?: string | null
+          id?: string
+          input_type: string
+          probable_causes?: string[] | null
+          property_id?: string | null
+          scam_alerts?: string[] | null
+          urgency?: string | null
+          user_id: string
+        }
+        Update: {
+          appliance_id?: string | null
+          created_at?: string
+          description?: string | null
+          diagnosis_summary?: string | null
+          estimated_cost_max?: number | null
+          estimated_cost_min?: number | null
+          file_url?: string | null
+          fix_instructions?: string | null
+          id?: string
+          input_type?: string
+          probable_causes?: string[] | null
+          property_id?: string | null
+          scam_alerts?: string[] | null
+          urgency?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diagnostics_appliance_id_fkey"
+            columns: ["appliance_id"]
+            isOneToOne: false
+            referencedRelation: "appliances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "diagnostics_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          diagnostics_used_this_month: number | null
+          email: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          subscription_tier: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          diagnostics_used_this_month?: number | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          subscription_tier?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          diagnostics_used_this_month?: number | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          subscription_tier?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      properties: {
+        Row: {
+          address: string | null
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
