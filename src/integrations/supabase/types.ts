@@ -19,8 +19,12 @@ export type Database = {
           brand: string | null
           created_at: string
           id: string
+          last_maintenance_date: string | null
+          maintenance_schedule: Json | null
           model: string | null
           name: string
+          next_maintenance_date: string | null
+          notes: string | null
           property_id: string
           purchase_date: string | null
           status: string | null
@@ -31,8 +35,12 @@ export type Database = {
           brand?: string | null
           created_at?: string
           id?: string
+          last_maintenance_date?: string | null
+          maintenance_schedule?: Json | null
           model?: string | null
           name: string
+          next_maintenance_date?: string | null
+          notes?: string | null
           property_id: string
           purchase_date?: string | null
           status?: string | null
@@ -43,8 +51,12 @@ export type Database = {
           brand?: string | null
           created_at?: string
           id?: string
+          last_maintenance_date?: string | null
+          maintenance_schedule?: Json | null
           model?: string | null
           name?: string
+          next_maintenance_date?: string | null
+          notes?: string | null
           property_id?: string
           purchase_date?: string | null
           status?: string | null

@@ -1,1 +1,7 @@
 project_id = "nflwheveqglnxgfmimpq"
+
+[auth]
+enabled = true
+
+[functions.diagnose-appliance]
+verify_jwt = true
