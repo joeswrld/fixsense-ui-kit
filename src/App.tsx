@@ -13,6 +13,7 @@ import Settings from "./pages/Settings";
 import ResultDemo from "./pages/ResultDemo";
 import Result from "./pages/Result";
 import History from "./pages/History";
+import Calendar from "./pages/Calendar";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
         <Route path="/result-demo" element={<ResultDemo />} />
         <Route path="/result/:id" element={<Result />} />
           <Route path="/history" element={<History />} />
+          <Route path="/calendar" element={<Calendar />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -5,3 +5,9 @@ enabled = true
 
 [functions.diagnose-appliance]
 verify_jwt = true
+
+[functions.send-maintenance-reminder]
+verify_jwt = false
+
+[functions.send-critical-alert]
+verify_jwt = false

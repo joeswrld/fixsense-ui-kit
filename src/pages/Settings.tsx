@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Wrench, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { NotificationPreferences } from "@/components/settings/NotificationPreferences";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -138,15 +139,7 @@ const Settings = () => {
             </TabsContent>
 
             <TabsContent value="notifications" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Notification Preferences</CardTitle>
-                  <CardDescription>Choose how you want to be notified</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">Notification settings coming soon...</p>
-                </CardContent>
-              </Card>
+              <NotificationPreferences />
             </TabsContent>
           </Tabs>
         </div>

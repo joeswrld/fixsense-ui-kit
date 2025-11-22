@@ -198,6 +198,16 @@ const Dashboard = () => {
               </CardHeader>
             </Card>
 
+            <Card className="border-2 hover:border-primary/50 transition-all cursor-pointer" onClick={() => navigate("/calendar")}>
+              <CardHeader>
+                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                  <Calendar className="w-6 h-6 text-primary" />
+                </div>
+                <CardTitle>Maintenance Calendar</CardTitle>
+                <CardDescription>View and manage scheduled maintenance dates</CardDescription>
+              </CardHeader>
+            </Card>
+
             <Card className="border-2 hover:border-primary/50 transition-all cursor-pointer" onClick={() => navigate("/properties")}>
               <CardHeader>
                 <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
