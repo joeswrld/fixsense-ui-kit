@@ -12,6 +12,7 @@ import Pricing from "./pages/Pricing";
 import Settings from "./pages/Settings";
 import ResultDemo from "./pages/ResultDemo";
 import Result from "./pages/Result";
+import History from "./pages/History";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,7 +33,7 @@ const App = () => (
           <Route path="/settings" element={<Settings />} />
         <Route path="/result-demo" element={<ResultDemo />} />
         <Route path="/result/:id" element={<Result />} />
-          <Route path="/history" element={<Dashboard />} />
+          <Route path="/history" element={<History />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

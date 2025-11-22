@@ -37,9 +37,10 @@ const Settings = () => {
           </div>
 
           <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="profile">Profile</TabsTrigger>
               <TabsTrigger value="subscription">Subscription</TabsTrigger>
+              <TabsTrigger value="billing">Billing</TabsTrigger>
               <TabsTrigger value="notifications">Notifications</TabsTrigger>
             </TabsList>
 
@@ -81,6 +82,57 @@ const Settings = () => {
                     </div>
                     <Button>Upgrade to Pro</Button>
                   </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="billing" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Payment Method</CardTitle>
+                  <CardDescription>Manage your payment details</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="p-4 border rounded-lg">
+                    <p className="text-sm text-muted-foreground mb-4">No payment method on file</p>
+                    <Button variant="outline">Add Payment Method</Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Billing History</CardTitle>
+                  <CardDescription>View your past invoices and payments</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p className="text-sm">No billing history available</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Billing Address</CardTitle>
+                  <CardDescription>Update your billing information</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="address">Street Address</Label>
+                    <Input id="address" placeholder="123 Main St" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="city">City</Label>
+                      <Input id="city" placeholder="New York" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="zip">ZIP Code</Label>
+                      <Input id="zip" placeholder="10001" />
+                    </div>
+                  </div>
+                  <Button>Save Billing Address</Button>
                 </CardContent>
               </Card>
             </TabsContent>
