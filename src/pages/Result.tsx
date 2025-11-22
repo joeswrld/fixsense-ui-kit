@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Wrench, ArrowLeft, FileText, AlertTriangle, CheckCircle2, DollarSign, Loader2 } from "lucide-react";
+import { Wrench, ArrowLeft, FileText, AlertTriangle, CheckCircle2, DollarSign, Loader2, Download } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { exportDiagnosticToPDF } from "@/lib/pdfExport";
+import { useToast } from "@/hooks/use-toast";
 
 interface Diagnostic {
   id: string;
@@ -23,8 +25,10 @@ interface Diagnostic {
 const Result = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [diagnostic, setDiagnostic] = useState<Diagnostic | null>(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     fetchDiagnostic();
@@ -67,6 +71,28 @@ const Result = () => {
   if (!diagnostic) {
     return null;
   }
+
+  const handleExportPDF = async () => {
+    if (!diagnostic) return;
+    
+    setExporting(true);
+    try {
+      exportDiagnosticToPDF(diagnostic);
+      toast({
+        title: "Success",
+        description: "PDF report downloaded successfully",
+      });
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+      toast({
+        title: "Error",
+        description: "Failed to export PDF",
+        variant: "destructive",
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const urgencyConfig = {
     critical: { label: "Critical - Immediate attention needed", variant: "destructive" as const },
@@ -194,11 +220,19 @@ const Result = () => {
             </CardContent>
           </Card>
 
-          <div className="flex gap-4">
-            <Button className="flex-1" onClick={() => navigate("/diagnose")}>
+          <div className="grid sm:grid-cols-3 gap-4">
+            <Button onClick={() => navigate("/diagnose")}>
               Run Another Diagnostic
             </Button>
-            <Button variant="outline" className="flex-1" onClick={() => navigate("/dashboard")}>
+            <Button variant="outline" onClick={handleExportPDF} disabled={exporting}>
+              {exporting ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4 mr-2" />
+              )}
+              Download PDF
+            </Button>
+            <Button variant="outline" onClick={() => navigate("/dashboard")}>
               Back to Dashboard
             </Button>
           </div>

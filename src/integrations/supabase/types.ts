@@ -142,6 +142,30 @@ export type Database = {
           },
         ]
       }
+      notification_logs: {
+        Row: {
+          id: string
+          notification_type: string
+          related_id: string | null
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          notification_type: string
+          related_id?: string | null
+          sent_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          notification_type?: string
+          related_id?: string | null
+          sent_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -149,6 +173,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          notification_preferences: Json | null
           phone: string | null
           subscription_tier: string | null
           updated_at: string
@@ -159,6 +184,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          notification_preferences?: Json | null
           phone?: string | null
           subscription_tier?: string | null
           updated_at?: string
@@ -169,6 +195,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          notification_preferences?: Json | null
           phone?: string | null
           subscription_tier?: string | null
           updated_at?: string
