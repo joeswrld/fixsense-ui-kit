@@ -11,3 +11,12 @@ verify_jwt = false
 
 [functions.send-critical-alert]
 verify_jwt = false
+
+[functions.paystack-initialize-transaction]
+verify_jwt = true
+
+[functions.paystack-verify-transaction]
+verify_jwt = true
+
+[functions.paystack-cancel-subscription]
+verify_jwt = true

@@ -217,6 +217,16 @@ const Dashboard = () => {
                 <CardDescription>Track appliances and property assets</CardDescription>
               </CardHeader>
             </Card>
+
+            <Card className="border-2 hover:border-primary/50 transition-all cursor-pointer" onClick={() => navigate("/settings?tab=billing")}>
+              <CardHeader>
+                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                  <DollarSign className="w-6 h-6 text-primary" />
+                </div>
+                <CardTitle>Billing & Plans</CardTitle>
+                <CardDescription>Manage subscription and payment methods</CardDescription>
+              </CardHeader>
+            </Card>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
