@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Crown, Loader2 } from "lucide-react";
+import { CheckCircle2, Crown, Loader2, Receipt, Calendar, CreditCard, Download } from "lucide-react";
 import { toast } from "sonner";
 
 const plans = [
@@ -41,9 +41,20 @@ const plans = [
   },
 ];
 
+interface Transaction {
+  id: string;
+  amount: number;
+  status: string;
+  plan: string;
+  reference: string;
+  created_at: string;
+  payment_method?: string;
+}
+
 export const BillingManagement = () => {
   const [processingPlan, setProcessingPlan] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
+  const [downloadingReceipt, setDownloadingReceipt] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const { data: profile, isLoading, refetch } = useQuery({
@@ -60,6 +71,23 @@ export const BillingManagement = () => {
 
       if (error) throw error;
       return data;
+    },
+  });
+
+  const { data: transactions, isLoading: isLoadingTransactions } = useQuery({
+    queryKey: ["transactions"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase
+        .from("transactions")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data as Transaction[];
     },
   });
 
@@ -85,6 +113,7 @@ export const BillingManagement = () => {
       if (data?.data?.status === "success") {
         toast.success("Payment successful! Your subscription is now active.");
         await refetch(); // Refresh profile data
+        queryClient.invalidateQueries({ queryKey: ["transactions"] }); // Refresh transactions
         
         // Clean up URL parameters
         const url = new URL(window.location.href);
@@ -147,6 +176,211 @@ export const BillingManagement = () => {
     },
   });
 
+  const downloadReceipt = async (transaction: Transaction) => {
+    setDownloadingReceipt(transaction.id);
+    
+    try {
+      // Create receipt HTML
+      const receiptHTML = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              max-width: 800px;
+              margin: 0 auto;
+              padding: 40px;
+              background: #f5f5f5;
+            }
+            .receipt {
+              background: white;
+              padding: 40px;
+              border-radius: 8px;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 40px;
+              padding-bottom: 20px;
+              border-bottom: 2px solid #e5e5e5;
+            }
+            .logo {
+              font-size: 32px;
+              font-weight: bold;
+              color: #6366f1;
+              margin-bottom: 10px;
+            }
+            .title {
+              font-size: 24px;
+              font-weight: bold;
+              margin-bottom: 10px;
+            }
+            .success-badge {
+              display: inline-block;
+              background: #10b981;
+              color: white;
+              padding: 6px 16px;
+              border-radius: 20px;
+              font-size: 14px;
+              font-weight: 600;
+              margin-top: 10px;
+            }
+            .info-section {
+              margin: 30px 0;
+            }
+            .info-row {
+              display: flex;
+              justify-content: space-between;
+              padding: 12px 0;
+              border-bottom: 1px solid #f0f0f0;
+            }
+            .info-label {
+              color: #666;
+              font-weight: 500;
+            }
+            .info-value {
+              color: #333;
+              font-weight: 600;
+            }
+            .amount-section {
+              background: #f9fafb;
+              padding: 20px;
+              border-radius: 8px;
+              margin: 30px 0;
+              text-align: center;
+            }
+            .amount-label {
+              color: #666;
+              font-size: 14px;
+              margin-bottom: 8px;
+            }
+            .amount-value {
+              font-size: 36px;
+              font-weight: bold;
+              color: #6366f1;
+            }
+            .footer {
+              margin-top: 40px;
+              padding-top: 20px;
+              border-top: 2px solid #e5e5e5;
+              text-align: center;
+              color: #666;
+              font-size: 14px;
+            }
+            .footer-note {
+              margin-top: 20px;
+              font-size: 12px;
+              color: #999;
+            }
+            @media print {
+              body {
+                background: white;
+                padding: 0;
+              }
+              .receipt {
+                box-shadow: none;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="receipt">
+            <div class="header">
+              <div class="logo">🔧 FixSense</div>
+              <div class="title">Payment Receipt</div>
+              <div class="success-badge">✓ PAID</div>
+            </div>
+
+            <div class="info-section">
+              <div class="info-row">
+                <span class="info-label">Receipt Number</span>
+                <span class="info-value">${transaction.reference}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Date</span>
+                <span class="info-value">${new Date(transaction.created_at).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Customer Email</span>
+                <span class="info-value">${profile?.email || 'N/A'}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Plan</span>
+                <span class="info-value">${transaction.plan} Plan</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Payment Method</span>
+                <span class="info-value">${transaction.payment_method || 'Card'}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Status</span>
+                <span class="info-value" style="color: #10b981;">SUCCESS</span>
+              </div>
+            </div>
+
+            <div class="amount-section">
+              <div class="amount-label">Amount Paid</div>
+              <div class="amount-value">₦${(transaction.amount).toFixed(2)}</div>
+            </div>
+
+            <div class="footer">
+              <p><strong>Thank you for your payment!</strong></p>
+              <p>Your subscription has been activated successfully.</p>
+              <div class="footer-note">
+                <p>This is a computer-generated receipt and does not require a signature.</p>
+                <p>For any questions, please contact support@fixsense.com</p>
+                <p>© ${new Date().getFullYear()} FixSense. All rights reserved.</p>
+              </div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      // Create a Blob from the HTML
+      const blob = new Blob([receiptHTML], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      
+      // Create a temporary link and trigger download
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `FixSense_Receipt_${transaction.reference}.html`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success("Receipt downloaded successfully!");
+    } catch (error) {
+      console.error("Error downloading receipt:", error);
+      toast.error("Failed to download receipt");
+    } finally {
+      setDownloadingReceipt(null);
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "success":
+      case "completed":
+        return <Badge variant="default" className="bg-green-500">Success</Badge>;
+      case "pending":
+        return <Badge variant="secondary">Pending</Badge>;
+      case "failed":
+        return <Badge variant="destructive">Failed</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
   if (isLoading || verifying) {
     return (
       <Card>
@@ -197,7 +431,7 @@ export const BillingManagement = () => {
               
               <p className="text-sm text-muted-foreground">
                 {isPaidUser 
-                  ? `₦${(currentPlan?.price || 0) / 100}/month` 
+                  ? `₦${(currentPlan?.price || 0)}/month` 
                   : "No active subscription"}
               </p>
               
@@ -249,7 +483,7 @@ export const BillingManagement = () => {
                   )}
                 </CardTitle>
                 <div className="text-3xl font-bold">
-                  {plan.price === 0 ? "Free" : `₦${(plan.price / 100).toFixed(0)}`}
+                  {plan.price === 0 ? "Free" : `₦${(plan.price).toFixed(0)}`}
                   {plan.price > 0 && <span className="text-sm font-normal text-muted-foreground">/month</span>}
                 </div>
               </CardHeader>
@@ -283,6 +517,94 @@ export const BillingManagement = () => {
           ))}
         </div>
       </div>
+
+      {/* Transaction History */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Receipt className="w-5 h-5" />
+                Transaction History
+              </CardTitle>
+              <CardDescription>Your payment and subscription history</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoadingTransactions ? (
+            <div className="py-8 flex justify-center">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            </div>
+          ) : transactions && transactions.length > 0 ? (
+            <div className="space-y-3">
+              {transactions.map((transaction) => (
+                <div
+                  key={transaction.id}
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/30 transition-colors"
+                >
+                  <div className="flex items-start gap-4 flex-1">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <CreditCard className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="font-medium">{transaction.plan} Plan</p>
+                        {getStatusBadge(transaction.status)}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Reference: {transaction.reference}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                        <Calendar className="w-3 h-3" />
+                        {new Date(transaction.created_at).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right flex items-center gap-3">
+                    <div>
+                      <p className="font-semibold text-lg">
+                        ₦{(transaction.amount).toFixed(2)}
+                      </p>
+                      {transaction.payment_method && (
+                        <p className="text-xs text-muted-foreground capitalize">
+                          {transaction.payment_method}
+                        </p>
+                      )}
+                    </div>
+                    {transaction.status.toLowerCase() === "success" && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => downloadReceipt(transaction)}
+                        disabled={downloadingReceipt === transaction.id}
+                      >
+                        {downloadingReceipt === transaction.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Download className="w-4 h-4" />
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-muted-foreground">
+              <Receipt className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>No transactions yet</p>
+              <p className="text-sm mt-2">Your payment history will appear here</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

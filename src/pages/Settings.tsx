@@ -48,15 +48,11 @@ const Settings = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="profile">Profile</TabsTrigger>
               <TabsTrigger value="billing">Billing</TabsTrigger>
               <TabsTrigger value="notifications">Notifications</TabsTrigger>
             </TabsList>
-
-            <TabsContent value="billing" className="space-y-4">
-              <BillingManagement />
-            </TabsContent>
 
             <TabsContent value="profile" className="space-y-4">
               <Card>
@@ -82,7 +78,9 @@ const Settings = () => {
               </Card>
             </TabsContent>
 
-            
+            <TabsContent value="billing" className="space-y-4">
+              <BillingManagement />
+            </TabsContent>
 
             <TabsContent value="notifications" className="space-y-4">
               <NotificationPreferences />

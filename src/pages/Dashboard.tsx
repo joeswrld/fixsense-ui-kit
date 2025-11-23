@@ -5,7 +5,7 @@ import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Wrench, FileSearch, Home, LogOut, Upload, History, Building2, DollarSign, AlertTriangle, Calendar, Shield } from "lucide-react";
+import { Wrench, FileSearch, Home, LogOut, Upload, History, Building2, DollarSign, AlertTriangle, Calendar, Shield, Crown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
@@ -28,11 +28,17 @@ interface MaintenanceReminder {
   property: { name: string };
 }
 
+interface Profile {
+  subscription_tier: string;
+  subscription_status: string;
+}
+
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [recentDiagnostics, setRecentDiagnostics] = useState<Diagnostic[]>([]);
   const [maintenanceReminders, setMaintenanceReminders] = useState<MaintenanceReminder[]>([]);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [stats, setStats] = useState({
     totalDiagnostics: 0,
     scamAlertsSaved: 0,
@@ -66,6 +72,16 @@ const Dashboard = () => {
 
   const fetchDashboardData = async (userId: string) => {
     try {
+      // Fetch user profile for subscription info
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("subscription_tier, subscription_status")
+        .eq("id", userId)
+        .single();
+
+      if (profileError) throw profileError;
+      setProfile(profileData);
+
       // Fetch recent diagnostics
       const { data: diagnosticsData, error: diagnosticsError } = await supabase
         .from("diagnostics")
@@ -139,6 +155,42 @@ const Dashboard = () => {
     navigate("/");
   };
 
+  const getSubscriptionBadge = () => {
+    if (!profile) return null;
+    
+    const tier = profile.subscription_tier || "free";
+    const isActive = profile.subscription_status === "active";
+    const isPaid = isActive && tier !== "free";
+
+    if (tier === "free") {
+      return (
+        <Badge variant="secondary" className="text-xs">
+          Free
+        </Badge>
+      );
+    }
+
+    if (tier === "pro") {
+      return (
+        <Badge variant="default" className="text-xs gap-1">
+          <Crown className="w-3 h-3" />
+          Pro
+        </Badge>
+      );
+    }
+
+    if (tier === "business") {
+      return (
+        <Badge variant="default" className="text-xs gap-1 bg-gradient-to-r from-purple-500 to-pink-500">
+          <Crown className="w-3 h-3" />
+          Business
+        </Badge>
+      );
+    }
+
+    return null;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -159,9 +211,18 @@ const Dashboard = () => {
           </Link>
 
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground hidden sm:inline">
-              {user?.email}
-            </span>
+            <div className="hidden sm:flex flex-col items-end gap-1">
+              
+              <span className="text-sm text-muted-foreground">
+                {user?.email}
+              </span>
+              <div className="flex items-center gap-2">
+                {getSubscriptionBadge()}
+              </div>
+            </div>
+            <div className="sm:hidden">
+              {getSubscriptionBadge()}
+            </div>
             <Button variant="ghost" size="sm" onClick={handleSignOut}>
               <LogOut className="w-4 h-4 mr-2" />
               Sign Out

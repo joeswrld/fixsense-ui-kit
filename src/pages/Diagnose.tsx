@@ -185,6 +185,8 @@ const Diagnose = () => {
             </div>
             <span>FixSense</span>
           </Link>
+         
+         
         </div>
       </header>
 
