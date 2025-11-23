@@ -19,13 +19,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Wrench, ArrowLeft, Calendar as CalendarIcon, Loader2, CheckCircle2, Download } from "lucide-react";
-import { Link } from "react-router-dom";
+import { ArrowLeft, Loader2, CheckCircle2, Download, Calendar as CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { downloadICalFile, generateGoogleCalendarUrl, CalendarEvent } from "@/lib/calendarExport";
+import { AppHeader } from "@/components/AppHeader";
 
 interface MaintenanceEvent {
   id: string;
@@ -130,7 +130,6 @@ const Calendar = () => {
 
     try {
       const today = new Date();
-      // Calculate next maintenance date (30 days from now as default)
       const nextDate = new Date(today);
       nextDate.setDate(nextDate.getDate() + 30);
 
@@ -220,16 +219,7 @@ const Calendar = () => {
 
   return (
     <div className="min-h-screen bg-accent/10">
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
-        <div className="container flex h-16 items-center justify-between px-4">
-          <Link to="/dashboard" className="flex items-center gap-2 font-bold text-xl">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <Wrench className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span>FixSense</span>
-          </Link>
-        </div>
-      </header>
+      <AppHeader />
 
       <main className="container px-4 py-8">
         <div className="max-w-6xl mx-auto space-y-6">

@@ -5,11 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Camera, Video, Mic, FileText, Upload, ArrowLeft, Wrench, Loader2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Camera, Video, Mic, FileText, Upload, ArrowLeft, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Progress } from "@/components/ui/progress";
+import { AppHeader } from "@/components/AppHeader";
 
 interface Property {
   id: string;
@@ -100,13 +100,11 @@ const Diagnose = () => {
 
       let fileUrl = null;
 
-      // Upload file if present
       if (file && inputType !== "text") {
         setUploading(true);
         const fileExt = file.name.split('.').pop();
         const fileName = `${user.id}/${Date.now()}.${fileExt}`;
 
-        // Simulate upload progress
         const progressInterval = setInterval(() => {
           setUploadProgress(prev => Math.min(prev + 10, 90));
         }, 100);
@@ -127,7 +125,6 @@ const Diagnose = () => {
         setUploading(false);
       }
 
-      // Call the AI diagnostic edge function
       const { data: session } = await supabase.auth.getSession();
       
       const response = await fetch(
@@ -177,18 +174,7 @@ const Diagnose = () => {
 
   return (
     <div className="min-h-screen bg-accent/10">
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
-        <div className="container flex h-16 items-center justify-between px-4">
-          <Link to="/dashboard" className="flex items-center gap-2 font-bold text-xl">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <Wrench className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span>FixSense</span>
-          </Link>
-         
-         
-        </div>
-      </header>
+      <AppHeader />
 
       <main className="container px-4 py-8">
         <div className="max-w-3xl mx-auto space-y-6">

@@ -1,3 +1,8 @@
+
+// ============================================================
+// supabase/functions/paystack-initialize-transaction/index.ts
+// ============================================================
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
@@ -42,6 +47,12 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { email, amount, plan, callback_url } = await req.json() as InitializeTransactionRequest;
 
+    // Generate unique reference
+    const reference = `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    console.log("Initializing payment for user:", user.id);
+    console.log("Plan:", plan, "Amount:", amount, "Reference:", reference);
+
     // Initialize transaction with Paystack
     const response = await fetch("https://api.paystack.co/transaction/initialize", {
       method: "POST",
@@ -51,7 +62,8 @@ const handler = async (req: Request): Promise<Response> => {
       },
       body: JSON.stringify({
         email,
-        amount: amount * 100, // Convert to kobo (or cents)
+        amount, // Amount is already in kobo from frontend
+        reference,
         metadata: {
           user_id: user.id,
           plan,
@@ -63,10 +75,33 @@ const handler = async (req: Request): Promise<Response> => {
     const data = await response.json();
 
     if (!response.ok) {
+      console.error("Paystack initialization failed:", data);
       throw new Error(data.message || "Failed to initialize transaction");
     }
 
-    console.log("Transaction initialized:", data);
+    console.log("Paystack initialization successful");
+
+    // Create transaction record in database
+    const { data: transactionData, error: dbError } = await supabase
+      .from("transactions")
+      .insert({
+        user_id: user.id,
+        amount, // Amount in kobo
+        status: "pending",
+        plan,
+        reference,
+        payment_method: null,
+        metadata: data,
+      })
+      .select()
+      .single();
+
+    if (dbError) {
+      console.error("Failed to create transaction record:", dbError);
+      // Don't throw error - payment can still proceed
+    } else {
+      console.log("Transaction record created:", transactionData.id);
+    }
 
     return new Response(
       JSON.stringify(data),

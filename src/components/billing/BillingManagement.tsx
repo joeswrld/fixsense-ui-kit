@@ -16,7 +16,7 @@ const plans = [
   },
   {
     name: "Pro",
-    price: 2900, // ₦29 in kobo
+    price: 350000, // ₦3,500 in kobo (₦3,500 × 100)
     tier: "pro",
     features: [
       "Unlimited diagnostics",
@@ -29,7 +29,7 @@ const plans = [
   },
   {
     name: "Host Business",
-    price: 9900, // ₦99 in kobo
+    price: 650000, // ₦6,500 in kobo (₦6,500 × 100)
     tier: "business",
     features: [
       "Everything in Pro",
@@ -328,7 +328,7 @@ export const BillingManagement = () => {
 
             <div class="amount-section">
               <div class="amount-label">Amount Paid</div>
-              <div class="amount-value">₦${(transaction.amount).toFixed(2)}</div>
+              <div class="amount-value">₦${(transaction.amount / 100).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             </div>
 
             <div class="footer">
@@ -431,7 +431,7 @@ export const BillingManagement = () => {
               
               <p className="text-sm text-muted-foreground">
                 {isPaidUser 
-                  ? `₦${(currentPlan?.price || 0)}/month` 
+                  ? `₦${(currentPlan?.price ? currentPlan.price / 100 : 0).toLocaleString('en-NG')}/month` 
                   : "No active subscription"}
               </p>
               
@@ -483,7 +483,7 @@ export const BillingManagement = () => {
                   )}
                 </CardTitle>
                 <div className="text-3xl font-bold">
-                  {plan.price === 0 ? "Free" : `₦${(plan.price).toFixed(0)}`}
+                  {plan.price === 0 ? "Free" : `₦${(plan.price / 100).toLocaleString('en-NG')}`}
                   {plan.price > 0 && <span className="text-sm font-normal text-muted-foreground">/month</span>}
                 </div>
               </CardHeader>
@@ -570,7 +570,7 @@ export const BillingManagement = () => {
                   <div className="text-right flex items-center gap-3">
                     <div>
                       <p className="font-semibold text-lg">
-                        ₦{(transaction.amount).toFixed(2)}
+                        ₦{(transaction.amount / 100).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </p>
                       {transaction.payment_method && (
                         <p className="text-xs text-muted-foreground capitalize">
