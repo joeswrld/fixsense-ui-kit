@@ -142,6 +142,59 @@ export type Database = {
           },
         ]
       }
+      maintenance_history: {
+        Row: {
+          after_photo_url: string | null
+          appliance_id: string
+          before_photo_url: string | null
+          completed: boolean
+          cost: number | null
+          created_at: string
+          id: string
+          maintenance_date: string
+          maintenance_type: string
+          notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          after_photo_url?: string | null
+          appliance_id: string
+          before_photo_url?: string | null
+          completed?: boolean
+          cost?: number | null
+          created_at?: string
+          id?: string
+          maintenance_date?: string
+          maintenance_type: string
+          notes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          after_photo_url?: string | null
+          appliance_id?: string
+          before_photo_url?: string | null
+          completed?: boolean
+          cost?: number | null
+          created_at?: string
+          id?: string
+          maintenance_date?: string
+          maintenance_type?: string
+          notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_history_appliance_id_fkey"
+            columns: ["appliance_id"]
+            isOneToOne: false
+            referencedRelation: "appliances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_logs: {
         Row: {
           id: string
@@ -174,7 +227,12 @@ export type Database = {
           full_name: string | null
           id: string
           notification_preferences: Json | null
+          paystack_customer_code: string | null
+          paystack_subscription_code: string | null
           phone: string | null
+          subscription_end_date: string | null
+          subscription_start_date: string | null
+          subscription_status: string | null
           subscription_tier: string | null
           updated_at: string
         }
@@ -185,7 +243,12 @@ export type Database = {
           full_name?: string | null
           id: string
           notification_preferences?: Json | null
+          paystack_customer_code?: string | null
+          paystack_subscription_code?: string | null
           phone?: string | null
+          subscription_end_date?: string | null
+          subscription_start_date?: string | null
+          subscription_status?: string | null
           subscription_tier?: string | null
           updated_at?: string
         }
@@ -196,7 +259,12 @@ export type Database = {
           full_name?: string | null
           id?: string
           notification_preferences?: Json | null
+          paystack_customer_code?: string | null
+          paystack_subscription_code?: string | null
           phone?: string | null
+          subscription_end_date?: string | null
+          subscription_start_date?: string | null
+          subscription_status?: string | null
           subscription_tier?: string | null
           updated_at?: string
         }

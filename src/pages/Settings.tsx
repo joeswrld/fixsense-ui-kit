@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,9 +8,19 @@ import { Wrench, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NotificationPreferences } from "@/components/settings/NotificationPreferences";
+import { BillingManagement } from "@/components/billing/BillingManagement";
 
 const Settings = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "profile");
+
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   return (
     <div className="min-h-screen bg-accent/10">
@@ -37,13 +47,18 @@ const Settings = () => {
             <p className="text-muted-foreground">Manage your account and preferences</p>
           </div>
 
-          <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="profile">Profile</TabsTrigger>
-              <TabsTrigger value="subscription">Subscription</TabsTrigger>
               <TabsTrigger value="billing">Billing</TabsTrigger>
+              <TabsTrigger value="subscription">Subscription</TabsTrigger>
+              <TabsTrigger value="payment">Payment</TabsTrigger>
               <TabsTrigger value="notifications">Notifications</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="billing" className="space-y-4">
+              <BillingManagement />
+            </TabsContent>
 
             <TabsContent value="profile" className="space-y-4">
               <Card>
@@ -73,67 +88,28 @@ const Settings = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>Current Plan</CardTitle>
-                  <CardDescription>Manage your subscription</CardDescription>
+                  <CardDescription>View your subscription details</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <div>
-                      <h3 className="font-semibold">Free Plan</h3>
-                      <p className="text-sm text-muted-foreground">2 diagnostics per month</p>
-                    </div>
-                    <Button>Upgrade to Pro</Button>
-                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Manage your subscription in the Billing tab
+                  </p>
+                  <Button onClick={() => setActiveTab("billing")}>Go to Billing</Button>
                 </CardContent>
               </Card>
             </TabsContent>
 
-            <TabsContent value="billing" className="space-y-4">
+            <TabsContent value="payment" className="space-y-4">
               <Card>
                 <CardHeader>
                   <CardTitle>Payment Method</CardTitle>
                   <CardDescription>Manage your payment details</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="p-4 border rounded-lg">
-                    <p className="text-sm text-muted-foreground mb-4">No payment method on file</p>
-                    <Button variant="outline">Add Payment Method</Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Billing History</CardTitle>
-                  <CardDescription>View your past invoices and payments</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p className="text-sm">No billing history available</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Billing Address</CardTitle>
-                  <CardDescription>Update your billing information</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="address">Street Address</Label>
-                    <Input id="address" placeholder="123 Main St" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="city">City</Label>
-                      <Input id="city" placeholder="New York" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="zip">ZIP Code</Label>
-                      <Input id="zip" placeholder="10001" />
-                    </div>
-                  </div>
-                  <Button>Save Billing Address</Button>
+                  <p className="text-sm text-muted-foreground">
+                    Payment methods are managed through Paystack during checkout
+                  </p>
+                  <Button onClick={() => setActiveTab("billing")}>View Plans</Button>
                 </CardContent>
               </Card>
             </TabsContent>

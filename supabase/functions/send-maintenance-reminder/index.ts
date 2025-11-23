@@ -1,5 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
+import { Resend } from "https://esm.sh/resend@2.0.0";
+
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -131,6 +134,43 @@ const handler = async (req: Request): Promise<Response> => {
 
       console.log(`Reminder prepared for: ${profile.email} - ${appliance.name}`);
 
+      // Send email notification
+      try {
+        await resend.emails.send({
+          from: "FixSense <onboarding@resend.dev>",
+          to: [profile.email],
+          subject: `Maintenance Reminder: ${appliance.name}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h1 style="color: #2563eb;">Maintenance Reminder</h1>
+              <p>This is a friendly reminder that the following appliance needs maintenance soon:</p>
+              
+              <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h2 style="margin: 0 0 10px 0; color: #1f2937;">${appliance.name}</h2>
+                <p style="margin: 5px 0;"><strong>Type:</strong> ${appliance.type}</p>
+                <p style="margin: 5px 0;"><strong>Property:</strong> ${appliance.properties.name}</p>
+                <p style="margin: 5px 0;"><strong>Scheduled Date:</strong> ${new Date(appliance.next_maintenance_date).toLocaleDateString()}</p>
+              </div>
+              
+              <p>Regular maintenance helps prevent costly breakdowns and extends the life of your appliances.</p>
+              
+              <a href="${supabaseUrl}/calendar" 
+                 style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; 
+                        text-decoration: none; border-radius: 6px; margin: 20px 0;">
+                View Calendar
+              </a>
+              
+              <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
+                You can change your notification preferences in your account settings.
+              </p>
+            </div>
+          `,
+        });
+        console.log(`Email sent to ${profile.email}`);
+      } catch (emailError: any) {
+        console.error(`Failed to send email to ${profile.email}:`, emailError);
+      }
+
       // Log notification
       await supabase.from("notification_logs").insert({
         user_id: appliance.properties.user_id,
@@ -138,45 +178,6 @@ const handler = async (req: Request): Promise<Response> => {
         related_id: appliance.id,
       });
     }
-
-    // TODO: Email sending with Resend - uncomment once RESEND_API_KEY is configured
-    /*
-    const Resend = (await import("npm:resend@2.0.0")).Resend;
-    const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-    
-    for (const reminder of reminders) {
-      await resend.emails.send({
-        from: "FixSense <maintenance@fixsense.app>",
-        to: [reminder.user_email],
-        subject: `Maintenance Reminder: ${reminder.appliance_name}`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #2563eb;">Maintenance Reminder</h1>
-            <p>This is a friendly reminder that the following appliance needs maintenance soon:</p>
-            
-            <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h2 style="margin: 0 0 10px 0; color: #1f2937;">${reminder.appliance_name}</h2>
-              <p style="margin: 5px 0;"><strong>Type:</strong> ${reminder.appliance_type}</p>
-              <p style="margin: 5px 0;"><strong>Property:</strong> ${reminder.property_name}</p>
-              <p style="margin: 5px 0;"><strong>Scheduled Date:</strong> ${new Date(reminder.maintenance_date).toLocaleDateString()}</p>
-            </div>
-            
-            <p>Regular maintenance helps prevent costly breakdowns and extends the life of your appliances.</p>
-            
-            <a href="${supabaseUrl}/calendar" 
-               style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; 
-                      text-decoration: none; border-radius: 6px; margin: 20px 0;">
-              View Calendar
-            </a>
-            
-            <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
-              You can change your notification preferences in your account settings.
-            </p>
-          </div>
-        `,
-      });
-    }
-    */
 
     console.log("Maintenance reminders processed successfully");
 
