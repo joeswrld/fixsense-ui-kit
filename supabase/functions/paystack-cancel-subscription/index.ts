@@ -12,11 +12,6 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const paystackSecretKey = Deno.env.get("PAYSTACK_SECRET_KEY");
-    if (!paystackSecretKey) {
-      throw new Error("PAYSTACK_SECRET_KEY not configured");
-    }
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -33,10 +28,10 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Unauthorized");
     }
 
-    // Get user's subscription code
+    // Get user's profile
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("paystack_subscription_code, subscription_status")
+      .select("paystack_subscription_code, subscription_status, email")
       .eq("id", user.id)
       .single();
 
@@ -44,45 +39,37 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Profile not found");
     }
 
-    if (!profile.paystack_subscription_code) {
-      throw new Error("No active subscription found");
+    // Check if user has an active paid subscription
+    if (profile.subscription_status !== "active") {
+      throw new Error("No active subscription to cancel");
     }
 
-    // Cancel subscription with Paystack
-    const response = await fetch(
-      `https://api.paystack.co/subscription/disable`,
-      {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${paystackSecretKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          code: profile.paystack_subscription_code,
-          token: profile.paystack_subscription_code,
-        }),
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to cancel subscription");
-    }
-
-    console.log("Subscription cancelled:", data);
-
-    // Update user profile
-    await supabase
+    // Update user profile to cancel subscription
+    // Since we're using one-time payments, not recurring Paystack subscriptions,
+    // we just set the subscription to cancelled
+    const { error: updateError } = await supabase
       .from("profiles")
       .update({
         subscription_status: "cancelled",
         subscription_tier: "free",
+        // Clear Paystack codes
+        paystack_subscription_code: null,
+        paystack_customer_code: null,
       })
       .eq("id", user.id);
 
+    if (updateError) {
+      console.error("Error updating profile:", updateError);
+      throw new Error("Failed to cancel subscription");
+    }
+
+    console.log(`Subscription cancelled for user ${user.id}`);
+
     return new Response(
-      JSON.stringify({ success: true, message: "Subscription cancelled successfully" }),
+      JSON.stringify({ 
+        success: true, 
+        message: "Subscription cancelled successfully. Your account will remain active until the current billing period ends." 
+      }),
       {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },

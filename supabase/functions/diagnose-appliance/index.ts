@@ -43,7 +43,7 @@ serve(async (req) => {
     // Build the prompt for AI analysis
     let systemPrompt = `You are an expert appliance repair diagnostic AI. Analyze the provided input and return a detailed diagnosis in JSON format with the following structure:
 {
-  "diagnosis_summary": "Brief summary of the issue",
+  "diagnosis_summary": " summary of the issue",
   "probable_causes": ["cause 1", "cause 2", "cause 3"],
   "estimated_cost_min": number,
   "estimated_cost_max": number,

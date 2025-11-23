@@ -51,8 +51,6 @@ const Settings = () => {
             <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="profile">Profile</TabsTrigger>
               <TabsTrigger value="billing">Billing</TabsTrigger>
-              <TabsTrigger value="subscription">Subscription</TabsTrigger>
-              <TabsTrigger value="payment">Payment</TabsTrigger>
               <TabsTrigger value="notifications">Notifications</TabsTrigger>
             </TabsList>
 
@@ -84,35 +82,7 @@ const Settings = () => {
               </Card>
             </TabsContent>
 
-            <TabsContent value="subscription" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Current Plan</CardTitle>
-                  <CardDescription>View your subscription details</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    Manage your subscription in the Billing tab
-                  </p>
-                  <Button onClick={() => setActiveTab("billing")}>Go to Billing</Button>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="payment" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Payment Method</CardTitle>
-                  <CardDescription>Manage your payment details</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    Payment methods are managed through Paystack during checkout
-                  </p>
-                  <Button onClick={() => setActiveTab("billing")}>View Plans</Button>
-                </CardContent>
-              </Card>
-            </TabsContent>
+            
 
             <TabsContent value="notifications" className="space-y-4">
               <NotificationPreferences />
