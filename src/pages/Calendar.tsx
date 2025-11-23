@@ -13,12 +13,19 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Wrench, ArrowLeft, Calendar as CalendarIcon, Loader2, CheckCircle2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Wrench, ArrowLeft, Calendar as CalendarIcon, Loader2, CheckCircle2, Download } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { downloadICalFile, generateGoogleCalendarUrl, CalendarEvent } from "@/lib/calendarExport";
 
 interface MaintenanceEvent {
   id: string;
@@ -163,6 +170,46 @@ const Calendar = () => {
 
   const datesWithEvents = events.map(event => new Date(event.next_maintenance_date));
 
+  const handleExportAll = () => {
+    const calendarEvents: CalendarEvent[] = events.map(event => {
+      const startDate = new Date(event.next_maintenance_date);
+      const endDate = new Date(startDate);
+      endDate.setHours(endDate.getHours() + 2);
+
+      return {
+        id: event.id,
+        title: `Maintenance: ${event.name}`,
+        description: `Scheduled maintenance for ${event.type} at ${event.property.name}`,
+        location: event.property.name,
+        startDate,
+        endDate,
+      };
+    });
+
+    downloadICalFile(calendarEvents);
+    toast({
+      title: "Calendar Exported",
+      description: "Your maintenance schedule has been exported. Import it into any calendar app.",
+    });
+  };
+
+  const handleExportSingle = (event: MaintenanceEvent) => {
+    const startDate = new Date(event.next_maintenance_date);
+    const endDate = new Date(startDate);
+    endDate.setHours(endDate.getHours() + 2);
+
+    const calendarEvent: CalendarEvent = {
+      id: event.id,
+      title: `Maintenance: ${event.name}`,
+      description: `Scheduled maintenance for ${event.type} at ${event.property.name}`,
+      location: event.property.name,
+      startDate,
+      endDate,
+    };
+
+    window.open(generateGoogleCalendarUrl(calendarEvent), "_blank");
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-accent/10 flex items-center justify-center">
@@ -191,9 +238,24 @@ const Calendar = () => {
             Back to Dashboard
           </Button>
 
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Maintenance Calendar</h1>
-            <p className="text-muted-foreground">View and manage scheduled maintenance across all properties</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">Maintenance Calendar</h1>
+              <p className="text-muted-foreground">View and manage scheduled maintenance across all properties</p>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button>
+                  <Download className="w-4 h-4 mr-2" />
+                  Export Calendar
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleExportAll}>
+                  Download iCal File
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           <div className="grid lg:grid-cols-2 gap-6">
@@ -246,18 +308,30 @@ const Calendar = () => {
                       getEventsForDate(selectedDate).map((event) => (
                         <div
                           key={event.id}
-                          className="p-4 bg-accent/30 rounded-lg cursor-pointer hover:bg-accent/50 transition-colors"
-                          onClick={() => {
-                            setSelectedEvent(event);
-                            setShowDialog(true);
-                          }}
+                          className="p-4 bg-accent/30 rounded-lg hover:bg-accent/50 transition-colors"
                         >
                           <div className="flex items-start justify-between">
-                            <div>
+                            <div
+                              className="flex-1 cursor-pointer"
+                              onClick={() => {
+                                setSelectedEvent(event);
+                                setShowDialog(true);
+                              }}
+                            >
                               <p className="font-medium">{event.name}</p>
                               <p className="text-sm text-muted-foreground">{event.property.name}</p>
                               <Badge variant="outline" className="mt-2">{event.type}</Badge>
                             </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleExportSingle(event);
+                              }}
+                            >
+                              <Download className="w-4 h-4" />
+                            </Button>
                           </div>
                         </div>
                       ))
@@ -268,14 +342,16 @@ const Calendar = () => {
                     {events.slice(0, 10).map((event) => (
                       <div
                         key={event.id}
-                        className="p-4 bg-accent/30 rounded-lg cursor-pointer hover:bg-accent/50 transition-colors"
-                        onClick={() => {
-                          setSelectedEvent(event);
-                          setShowDialog(true);
-                        }}
+                        className="p-4 bg-accent/30 rounded-lg hover:bg-accent/50 transition-colors"
                       >
                         <div className="flex items-start justify-between">
-                          <div className="flex-1">
+                          <div
+                            className="flex-1 cursor-pointer"
+                            onClick={() => {
+                              setSelectedEvent(event);
+                              setShowDialog(true);
+                            }}
+                          >
                             <p className="font-medium">{event.name}</p>
                             <p className="text-sm text-muted-foreground">{event.property.name}</p>
                             <div className="flex items-center gap-2 mt-2">
@@ -285,6 +361,16 @@ const Calendar = () => {
                               </span>
                             </div>
                           </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleExportSingle(event);
+                            }}
+                          >
+                            <Download className="w-4 h-4" />
+                          </Button>
                         </div>
                       </div>
                     ))}
