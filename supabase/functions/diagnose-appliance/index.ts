@@ -7,6 +7,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Define usage limits by tier
+const USAGE_LIMITS = {
+  free: { photo: 2, video: 0, audio: 1, text: 5 },
+  pro: { photo: 50, video: 5, audio: 20, text: 100 },
+  business: { photo: 200, video: 25, audio: 75, text: 500 },
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -33,7 +40,76 @@ serve(async (req) => {
 
     console.log('Processing diagnostic for user:', user.id);
     console.log('Input type:', inputType);
-    console.log('File URL:', fileUrl);
+
+    // Fetch user profile to check subscription tier
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('subscription_tier, subscription_status')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError) {
+      console.error('Error fetching profile:', profileError);
+      throw new Error('Failed to fetch user profile');
+    }
+
+    const tier = (profile?.subscription_tier || 'free') as keyof typeof USAGE_LIMITS;
+    const isActive = profile?.subscription_status === 'active';
+    const effectiveTier = (isActive && tier !== 'free') ? tier : 'free';
+    
+    console.log('User tier:', effectiveTier);
+
+    // Get current month's usage
+    const firstDayOfMonth = new Date();
+    firstDayOfMonth.setDate(1);
+    firstDayOfMonth.setHours(0, 0, 0, 0);
+
+    const { data: monthlyUsage, error: usageError } = await supabase
+      .from('usage_tracking')
+      .select('input_type')
+      .eq('user_id', user.id)
+      .gte('created_at', firstDayOfMonth.toISOString());
+
+    if (usageError) {
+      console.error('Error fetching usage:', usageError);
+      throw new Error('Failed to check usage limits');
+    }
+
+    // Count usage by type
+    const usage = {
+      photo: monthlyUsage?.filter(d => d.input_type === 'photo').length || 0,
+      video: monthlyUsage?.filter(d => d.input_type === 'video').length || 0,
+      audio: monthlyUsage?.filter(d => d.input_type === 'audio').length || 0,
+      text: monthlyUsage?.filter(d => d.input_type === 'text').length || 0,
+    };
+
+    const tierLimits = USAGE_LIMITS[effectiveTier];
+    const inputTypeLimit = tierLimits[inputType as keyof typeof tierLimits] || 0;
+    const currentUsage = usage[inputType as keyof typeof usage] || 0;
+
+    console.log(`Usage check: ${currentUsage}/${inputTypeLimit} for ${inputType}`);
+
+    // Check if user has exceeded their limit
+    if (currentUsage >= inputTypeLimit) {
+      console.log('Usage limit exceeded');
+      return new Response(
+        JSON.stringify({
+          error: `You've reached your ${inputType} diagnostic limit for this month (${inputTypeLimit} diagnostics).`,
+          details: {
+            limit: inputTypeLimit,
+            used: currentUsage,
+            tier: effectiveTier,
+            message: effectiveTier === 'free' 
+              ? 'Upgrade to Pro or Business plan for more diagnostics.'
+              : 'Your usage limit has been reached. It will reset next month.'
+          }
+        }),
+        {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
 
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
     if (!lovableApiKey) {
@@ -43,7 +119,7 @@ serve(async (req) => {
     // Build the prompt for AI analysis
     let systemPrompt = `You are an expert appliance repair diagnostic AI. Analyze the provided input and return a detailed diagnosis in JSON format with the following structure:
 {
-  "diagnosis_summary": " summary of the issue",
+  "diagnosis_summary": "summary of the issue",
   "probable_causes": ["cause 1", "cause 2", "cause 3"],
   "estimated_cost_min": number,
   "estimated_cost_max": number,
@@ -63,7 +139,6 @@ Be specific about costs, causes, and repair steps. Focus on common appliance iss
 
     // If there's a file URL and it's an image or video, add it to the prompt
     if (fileUrl && (inputType === 'photo' || inputType === 'video')) {
-      // Get the signed URL for the file
       const filePath = fileUrl.split('/').slice(-2).join('/');
       const { data: signedUrlData, error: signedUrlError } = await supabase.storage
         .from('diagnostics')
@@ -150,9 +225,33 @@ Be specific about costs, causes, and repair steps. Focus on common appliance iss
 
     console.log('Diagnostic saved with ID:', diagnostic.id);
 
+    // Track usage
+    const { error: usageTrackError } = await supabase
+      .from('usage_tracking')
+      .insert({
+        user_id: user.id,
+        input_type: inputType,
+        subscription_tier: effectiveTier,
+        diagnostic_id: diagnostic.id
+      });
+
+    if (usageTrackError) {
+      console.error('Error tracking usage:', usageTrackError);
+      // Don't fail the request if usage tracking fails
+    }
+
+    // Return usage info along with diagnostic
+    const remainingUsage = inputTypeLimit - (currentUsage + 1);
+    
     return new Response(JSON.stringify({ 
       success: true, 
-      diagnostic 
+      diagnostic,
+      usage: {
+        used: currentUsage + 1,
+        limit: inputTypeLimit,
+        remaining: remainingUsage,
+        tier: effectiveTier
+      }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

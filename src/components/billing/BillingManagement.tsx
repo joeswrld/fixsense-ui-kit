@@ -6,20 +6,29 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Crown, Loader2, Receipt, Calendar, CreditCard, Download } from "lucide-react";
 import { toast } from "sonner";
+import { UsageSection } from '@/components/UsageSection';
 
 const plans = [
   {
     name: "Free",
     price: 0,
     tier: "free",
-    features: ["2 diagnostics per month", "Basic support", "View past reports"],
+    features: [
+      "2 photo diagnostics per month",
+      "1 audio diagnostic per month", 
+      "0 video diagnostics",
+      "Basic support",
+      "View past reports"
+    ],
   },
   {
     name: "Pro",
-    price: 350000, // ₦3,500 in kobo (₦3,500 × 100)
+    price: 350000, // ₦3,500 in kobo
     tier: "pro",
     features: [
-      "Unlimited diagnostics",
+      "50 photo diagnostics per month",
+      "20 audio diagnostics per month",
+      "5 video diagnostics per month",
       "Full history",
       "Price predictions",
       "Scam protection alerts",
@@ -29,10 +38,12 @@ const plans = [
   },
   {
     name: "Host Business",
-    price: 650000, // ₦6,500 in kobo (₦6,500 × 100)
+    price: 650000, // ₦6,500 in kobo
     tier: "business",
     features: [
-      "Everything in Pro",
+      "200 photo diagnostics per month",
+      "75 audio diagnostics per month",
+      "25 video diagnostics per month",
       "Multi-property support",
       "Team access",
       "Advanced analytics",
@@ -40,7 +51,6 @@ const plans = [
     ],
   },
 ];
-
 interface Transaction {
   id: string;
   amount: number;
@@ -56,6 +66,17 @@ export const BillingManagement = () => {
   const [verifying, setVerifying] = useState(false);
   const [downloadingReceipt, setDownloadingReceipt] = useState<string | null>(null);
   const queryClient = useQueryClient();
+
+  // Usage tracking state - MOVED INSIDE THE COMPONENT
+  const [usageData, setUsageData] = useState({
+    photoUsed: 0,
+    photoLimit: 2,
+    audioUsed: 0,
+    audioLimit: 2,
+    videoUsed: 0,
+    videoLimit: 2,
+    resetDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString(),
+  });
 
   const { data: profile, isLoading, refetch } = useQuery({
     queryKey: ["profile"],
@@ -91,6 +112,82 @@ export const BillingManagement = () => {
     },
   });
 
+  const { data: diagnosticsUsage } = useQuery({
+    queryKey: ["diagnostics-usage"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+  
+      // Get first day of current month
+      const now = new Date();
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      
+      const { data, error } = await supabase
+        .from("diagnostics")
+        .select("input_type")
+        .eq("user_id", user.id)
+        .gte("created_at", firstDayOfMonth.toISOString());
+  
+      if (error) throw error;
+  
+      // Count usage by type
+      const counts = {
+        photo: 0,
+        audio: 0,
+        video: 0,
+      };
+  
+      data?.forEach((d) => {
+        if (d.input_type === 'photo') counts.photo++;
+        else if (d.input_type === 'audio') counts.audio++;
+        else if (d.input_type === 'video') counts.video++;
+      });
+  
+      return counts;
+    },
+  });
+
+  useEffect(() => {
+    if (profile && diagnosticsUsage) {
+      const tier = profile.subscription_tier || "free";
+      
+      // Calculate next month's first day for reset date
+      const now = new Date();
+      const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      
+      // Set limits based on tier
+      let limits = {
+        photo: 2,
+        audio: 1,
+        video: 0,
+      };
+      
+      if (tier === "pro") {
+        limits = {
+          photo: 50,
+          audio: 20,
+          video: 5,
+        };
+      } else if (tier === "business") {
+        limits = {
+          photo: 200,
+          audio: 75,
+          video: 25,
+        };
+      }
+      
+      setUsageData({
+        photoUsed: diagnosticsUsage.photo || 0,
+        photoLimit: limits.photo,
+        audioUsed: diagnosticsUsage.audio || 0,
+        audioLimit: limits.audio,
+        videoUsed: diagnosticsUsage.video || 0,
+        videoLimit: limits.video,
+        resetDate: nextMonth.toISOString(),
+      });
+    }
+  }, [profile, diagnosticsUsage]);
+
   // Check for payment reference in URL (returned from Paystack)
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -112,8 +209,8 @@ export const BillingManagement = () => {
 
       if (data?.data?.status === "success") {
         toast.success("Payment successful! Your subscription is now active.");
-        await refetch(); // Refresh profile data
-        queryClient.invalidateQueries({ queryKey: ["transactions"] }); // Refresh transactions
+        await refetch();
+        queryClient.invalidateQueries({ queryKey: ["transactions"] });
         
         // Clean up URL parameters
         const url = new URL(window.location.href);
@@ -180,7 +277,6 @@ export const BillingManagement = () => {
     setDownloadingReceipt(transaction.id);
     
     try {
-      // Create receipt HTML
       const receiptHTML = `
         <!DOCTYPE html>
         <html>
@@ -345,11 +441,9 @@ export const BillingManagement = () => {
         </html>
       `;
 
-      // Create a Blob from the HTML
       const blob = new Blob([receiptHTML], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
       
-      // Create a temporary link and trigger download
       const link = document.createElement('a');
       link.href = url;
       link.download = `FixSense_Receipt_${transaction.reference}.html`;
@@ -398,7 +492,7 @@ export const BillingManagement = () => {
 
   return (
     <div className="space-y-6">
-      {/* Current Plan Status - Always Visible */}
+      {/* Current Plan Status */}
       <Card className={isPaidUser ? "border-primary" : ""}>
         <CardHeader>
           <CardTitle>Current Subscription</CardTitle>
@@ -605,6 +699,17 @@ export const BillingManagement = () => {
           )}
         </CardContent>
       </Card>
+      
+      {/* Usage Summary */}
+      <UsageSection
+        photoUsed={usageData.photoUsed}
+        photoLimit={usageData.photoLimit}
+        audioUsed={usageData.audioUsed}
+        audioLimit={usageData.audioLimit}
+        videoUsed={usageData.videoUsed}
+        videoLimit={usageData.videoLimit}
+        resetDate={usageData.resetDate}
+      />
     </div>
   );
-}
+};
