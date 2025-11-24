@@ -74,7 +74,7 @@ export const BillingManagement = () => {
     },
   });
 
-  const { data: transactions, isLoading: isLoadingTransactions } = useQuery({
+  const { data: transactions, isLoading: isLoadingTransactions } = useQuery<Transaction[]>({
     queryKey: ["transactions"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -87,7 +87,7 @@ export const BillingManagement = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as Transaction[];
+      return (data || []) as Transaction[];
     },
   });
 
