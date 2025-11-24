@@ -8,6 +8,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Diagnose from "./pages/Diagnose";
 import Properties from "./pages/Properties";
+import ApplianceDetail from "./pages/ApplianceDetail";
 import Pricing from "./pages/Pricing";
 import Settings from "./pages/Settings";
 import ResultDemo from "./pages/ResultDemo";
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/diagnose" element={<Diagnose />} />
           <Route path="/properties" element={<Properties />} />
+          <Route path="/appliances/:id" element={<ApplianceDetail />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/settings" element={<Settings />} />
         <Route path="/result-demo" element={<ResultDemo />} />

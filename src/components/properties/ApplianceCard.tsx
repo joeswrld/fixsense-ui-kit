@@ -2,10 +2,11 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, CheckCircle2, AlertTriangle, Trash2, Wrench } from "lucide-react";
+import { AlertCircle, CheckCircle2, AlertTriangle, Trash2, Wrench, ExternalLink } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 interface Appliance {
   id: string;
@@ -32,6 +33,7 @@ export const ApplianceCard = ({ appliance, onUpdate }: ApplianceCardProps) => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const status = statusConfig[appliance.status as keyof typeof statusConfig] || statusConfig.good;
   const StatusIcon = status.icon;
@@ -87,6 +89,15 @@ export const ApplianceCard = ({ appliance, onUpdate }: ApplianceCardProps) => {
               {appliance.notes && (
                 <p className="text-sm text-muted-foreground mt-2 italic">{appliance.notes}</p>
               )}
+              <Button
+                variant="link"
+                size="sm"
+                onClick={() => navigate(`/appliances/${appliance.id}`)}
+                className="px-0 h-auto mt-2"
+              >
+                View Details
+                <ExternalLink className="w-3 h-3 ml-1" />
+              </Button>
             </div>
             <Button
               variant="ghost"

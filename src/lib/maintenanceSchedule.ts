@@ -64,20 +64,74 @@ export const calculateNextMaintenanceDate = (
 };
 
 /**
- * Calculate all upcoming maintenance dates for an appliance
+ * Adjust maintenance frequency based on actual completion patterns
+ */
+export const adjustMaintenanceFrequency = (
+  baseFrequency: number,
+  completionHistory: { maintenance_date: string; maintenance_type: string }[]
+): number => {
+  if (completionHistory.length < 2) return baseFrequency;
+
+  // Calculate average time between actual maintenance completions
+  const sortedHistory = completionHistory.sort(
+    (a, b) => new Date(a.maintenance_date).getTime() - new Date(b.maintenance_date).getTime()
+  );
+
+  let totalDays = 0;
+  let intervals = 0;
+
+  for (let i = 1; i < sortedHistory.length; i++) {
+    const prev = new Date(sortedHistory[i - 1].maintenance_date);
+    const curr = new Date(sortedHistory[i].maintenance_date);
+    const days = Math.floor((curr.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Only count reasonable intervals (not too short, not too long)
+    if (days > 7 && days < baseFrequency * 2) {
+      totalDays += days;
+      intervals++;
+    }
+  }
+
+  if (intervals === 0) return baseFrequency;
+
+  const avgInterval = totalDays / intervals;
+
+  // Adjust frequency: if user maintains more/less frequently, adjust schedule
+  // Keep within 50%-150% of base frequency to avoid extremes
+  const adjustedFrequency = Math.round(avgInterval);
+  return Math.max(
+    Math.floor(baseFrequency * 0.5),
+    Math.min(Math.ceil(baseFrequency * 1.5), adjustedFrequency)
+  );
+};
+
+/**
+ * Calculate all upcoming maintenance dates for an appliance with pattern-based adjustments
  */
 export const calculateMaintenanceDates = (
   applianceType: string,
   purchaseDate: Date | null,
-  lastMaintenanceDate: Date | null
-): { schedule: MaintenanceSchedule; nextDate: Date }[] => {
+  lastMaintenanceDate: Date | null,
+  completionHistory?: { maintenance_date: string; maintenance_type: string }[]
+): { schedule: MaintenanceSchedule; nextDate: Date; adjustedFrequency?: number }[] => {
   const schedules = getMaintenanceSchedules(applianceType);
   const baseDate = lastMaintenanceDate || purchaseDate || new Date();
 
-  return schedules.map((schedule) => ({
-    schedule,
-    nextDate: calculateNextMaintenanceDate(baseDate, schedule.frequency),
-  }));
+  return schedules.map((schedule) => {
+    // Adjust frequency based on completion history if available
+    const adjustedFrequency = completionHistory && completionHistory.length > 0
+      ? adjustMaintenanceFrequency(schedule.frequency, completionHistory)
+      : schedule.frequency;
+
+    return {
+      schedule: {
+        ...schedule,
+        frequency: adjustedFrequency,
+      },
+      nextDate: calculateNextMaintenanceDate(baseDate, adjustedFrequency),
+      adjustedFrequency: completionHistory && completionHistory.length > 0 ? adjustedFrequency : undefined,
+    };
+  });
 };
 
 /**

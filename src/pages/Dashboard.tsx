@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Wrench, FileSearch, Home, LogOut, Upload, History, Building2, DollarSign, AlertTriangle, Calendar, Shield, Crown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { MaintenanceCostWidget } from "@/components/dashboard/MaintenanceCostWidget";
 
 interface Diagnostic {
   id: string;
@@ -328,41 +329,45 @@ const Dashboard = () => {
             </Card>
           </div>
 
-          {maintenanceReminders.length > 0 && (
-            <Card className="border-primary/20">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-primary" />
-                  Maintenance Reminders
-                </CardTitle>
-                <CardDescription>Appliances needing service in the next 30 days</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {maintenanceReminders.map((reminder) => (
-                  <div key={reminder.id} className="flex items-center justify-between p-3 bg-accent/30 rounded-lg">
-                    <div>
-                      <p className="font-medium">{reminder.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {reminder.property.name} • {reminder.type}
-                      </p>
+          <div className="grid md:grid-cols-2 gap-6">
+            {maintenanceReminders.length > 0 && (
+              <Card className="border-primary/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-primary" />
+                    Maintenance Reminders
+                  </CardTitle>
+                  <CardDescription>Appliances needing service in the next 30 days</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {maintenanceReminders.map((reminder) => (
+                    <div key={reminder.id} className="flex items-center justify-between p-3 bg-accent/30 rounded-lg">
+                      <div>
+                        <p className="font-medium">{reminder.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {reminder.property.name} • {reminder.type}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium">
+                          {new Date(reminder.next_maintenance_date).toLocaleDateString()}
+                        </p>
+                        <Badge variant="outline" className="mt-1">
+                          <Calendar className="w-3 h-3 mr-1" />
+                          Due Soon
+                        </Badge>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium">
-                        {new Date(reminder.next_maintenance_date).toLocaleDateString()}
-                      </p>
-                      <Badge variant="outline" className="mt-1">
-                        <Calendar className="w-3 h-3 mr-1" />
-                        Due Soon
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-                <Button variant="outline" className="w-full" onClick={() => navigate("/properties")}>
-                  View All Appliances
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+                  ))}
+                  <Button variant="outline" className="w-full" onClick={() => navigate("/properties")}>
+                    View All Appliances
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            <MaintenanceCostWidget />
+          </div>
 
           <Card>
             <CardHeader>
