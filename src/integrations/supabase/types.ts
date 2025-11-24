@@ -219,6 +219,56 @@ export type Database = {
         }
         Relationships: []
       }
+      predictive_alerts: {
+        Row: {
+          appliance_id: string
+          confidence_score: number
+          created_at: string
+          dismissed: boolean
+          id: string
+          predicted_failure_date: string | null
+          prediction_type: string
+          recommendation: string
+          severity: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          appliance_id: string
+          confidence_score: number
+          created_at?: string
+          dismissed?: boolean
+          id?: string
+          predicted_failure_date?: string | null
+          prediction_type: string
+          recommendation: string
+          severity: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          appliance_id?: string
+          confidence_score?: number
+          created_at?: string
+          dismissed?: boolean
+          id?: string
+          predicted_failure_date?: string | null
+          prediction_type?: string
+          recommendation?: string
+          severity?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "predictive_alerts_appliance_id_fkey"
+            columns: ["appliance_id"]
+            isOneToOne: false
+            referencedRelation: "appliances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -340,6 +390,155 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_ratings: {
+        Row: {
+          appliance_id: string | null
+          cost: number | null
+          created_at: string
+          id: string
+          rating: number
+          review: string | null
+          service_date: string | null
+          updated_at: string
+          user_id: string
+          vendor_id: string
+        }
+        Insert: {
+          appliance_id?: string | null
+          cost?: number | null
+          created_at?: string
+          id?: string
+          rating: number
+          review?: string | null
+          service_date?: string | null
+          updated_at?: string
+          user_id: string
+          vendor_id: string
+        }
+        Update: {
+          appliance_id?: string | null
+          cost?: number | null
+          created_at?: string
+          id?: string
+          rating?: number
+          review?: string | null
+          service_date?: string | null
+          updated_at?: string
+          user_id?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_ratings_appliance_id_fkey"
+            columns: ["appliance_id"]
+            isOneToOne: false
+            referencedRelation: "appliances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_ratings_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendors: {
+        Row: {
+          address: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          specialties: string[] | null
+          updated_at: string
+          user_id: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          specialties?: string[] | null
+          updated_at?: string
+          user_id: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          specialties?: string[] | null
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
+      warranties: {
+        Row: {
+          appliance_id: string
+          coverage_details: string | null
+          created_at: string
+          document_url: string | null
+          expiration_date: string | null
+          id: string
+          notes: string | null
+          provider: string | null
+          purchase_date: string | null
+          updated_at: string
+          user_id: string
+          warranty_type: string
+        }
+        Insert: {
+          appliance_id: string
+          coverage_details?: string | null
+          created_at?: string
+          document_url?: string | null
+          expiration_date?: string | null
+          id?: string
+          notes?: string | null
+          provider?: string | null
+          purchase_date?: string | null
+          updated_at?: string
+          user_id: string
+          warranty_type: string
+        }
+        Update: {
+          appliance_id?: string
+          coverage_details?: string | null
+          created_at?: string
+          document_url?: string | null
+          expiration_date?: string | null
+          id?: string
+          notes?: string | null
+          provider?: string | null
+          purchase_date?: string | null
+          updated_at?: string
+          user_id?: string
+          warranty_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warranties_appliance_id_fkey"
+            columns: ["appliance_id"]
+            isOneToOne: false
+            referencedRelation: "appliances"
             referencedColumns: ["id"]
           },
         ]
