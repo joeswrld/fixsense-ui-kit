@@ -2,13 +2,15 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Building2, Wrench, ArrowLeft, Loader2, History } from "lucide-react";
+import { Plus, Building2, Wrench, ArrowLeft, Loader2, History, AlertTriangle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { AddPropertyDialog } from "@/components/properties/AddPropertyDialog";
 import { PropertyCard } from "@/components/properties/PropertyCard";
 import { AppHeader } from "@/components/AppHeader";
 import { MaintenanceTimeline } from "@/components/properties/MaintenanceTimeline";
+import { VendorDirectory } from "@/components/vendors/VendorDirectory";
+import { PredictiveAlerts } from "@/components/predictive/PredictiveAlerts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Property {
@@ -126,6 +128,14 @@ const Properties = () => {
                   <History className="w-4 h-4" />
                   Maintenance History
                 </TabsTrigger>
+                <TabsTrigger value="vendors" className="gap-2">
+                  <Wrench className="w-4 h-4" />
+                  Vendors
+                </TabsTrigger>
+                <TabsTrigger value="alerts" className="gap-2">
+                  <AlertTriangle className="w-4 h-4" />
+                  AI Alerts
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="properties" className="space-y-6">
@@ -143,6 +153,14 @@ const Properties = () => {
 
               <TabsContent value="timeline">
                 <MaintenanceTimeline />
+              </TabsContent>
+
+              <TabsContent value="vendors">
+                <VendorDirectory />
+              </TabsContent>
+
+              <TabsContent value="alerts">
+                <PredictiveAlerts />
               </TabsContent>
             </Tabs>
           )}
