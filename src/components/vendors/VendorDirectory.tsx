@@ -11,6 +11,8 @@ import { Users, Plus, Phone, Mail, Globe, Star, Loader2, MapPin, BarChart3 } fro
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { VendorAnalytics } from "./VendorAnalytics";
+import { VendorBooking } from "./VendorBooking";
+import { VendorComparison } from "./VendorComparison";
 
 export const VendorDirectory = () => {
   const [open, setOpen] = useState(false);
@@ -116,13 +118,15 @@ export const VendorDirectory = () => {
             </CardTitle>
             <CardDescription>Manage your trusted service providers</CardDescription>
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Vendor
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            <VendorComparison />
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Vendor
+                </Button>
+              </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Add Service Vendor</DialogTitle>
@@ -207,6 +211,7 @@ export const VendorDirectory = () => {
               </div>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -241,14 +246,17 @@ export const VendorDirectory = () => {
                       </div>
                     )}
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setAnalyticsVendorId(vendor.id)}
-                  >
-                    <BarChart3 className="w-4 h-4 mr-2" />
-                    Analytics
-                  </Button>
+                  <div className="flex gap-2">
+                    <VendorBooking vendorId={vendor.id} vendorName={vendor.name} />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAnalyticsVendorId(vendor.id)}
+                    >
+                      <BarChart3 className="w-4 h-4 mr-2" />
+                      Analytics
+                    </Button>
+                  </div>
                 </div>
                 <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                   {vendor.contact_phone && (

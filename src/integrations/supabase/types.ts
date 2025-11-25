@@ -455,6 +455,63 @@ export type Database = {
           },
         ]
       }
+      vendor_bookings: {
+        Row: {
+          appliance_id: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          scheduled_date: string
+          scheduled_time: string
+          service_type: string
+          status: string
+          updated_at: string
+          user_id: string
+          vendor_id: string
+        }
+        Insert: {
+          appliance_id?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          scheduled_date: string
+          scheduled_time: string
+          service_type: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          vendor_id: string
+        }
+        Update: {
+          appliance_id?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          scheduled_date?: string
+          scheduled_time?: string
+          service_type?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_bookings_appliance_id_fkey"
+            columns: ["appliance_id"]
+            isOneToOne: false
+            referencedRelation: "appliances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_bookings_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_ratings: {
         Row: {
           appliance_id: string | null

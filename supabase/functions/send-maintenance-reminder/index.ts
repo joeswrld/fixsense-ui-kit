@@ -119,7 +119,7 @@ const handler = async (req: Request): Promise<Response> => {
 
       // Check if user wants maintenance reminders
       const prefs = profile.notification_preferences || {};
-      if (!prefs.maintenance_reminders) {
+      if (prefs.maintenance_reminders === false) {
         console.log("User has disabled maintenance reminders");
         continue;
       }
@@ -221,7 +221,7 @@ const handler = async (req: Request): Promise<Response> => {
         if (!profile) continue;
 
         const prefs = profile.notification_preferences || {};
-        if (!prefs.maintenance_reminders) continue;
+        if (prefs.warranty_expiration === false) continue;
 
         try {
           await resend.emails.send({
