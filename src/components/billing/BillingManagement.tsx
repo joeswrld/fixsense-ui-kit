@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Crown, Loader2, Receipt, Calendar, CreditCard, Download } from "lucide-react";
 import { toast } from "sonner";
-import { UsageSection } from '@/components/UsageSection';
+
+import UsageSection from '@/components/billing/UsageSection';
 
 const plans = [
   {
@@ -53,22 +53,6 @@ const plans = [
   },
 ];
 
-// Define tier limits
-const tierLimits = {
-  free: {
-    properties: 1,
-    text: 5,
-  },
-  pro: {
-    properties: 5,
-    text: 100,
-  },
-  business: {
-    properties: 20,
-    text: 500,
-  },
-};
-
 interface Transaction {
   id: string;
   amount: number;
@@ -84,20 +68,6 @@ export const BillingManagement = () => {
   const [verifying, setVerifying] = useState(false);
   const [downloadingReceipt, setDownloadingReceipt] = useState<string | null>(null);
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
-
-  // Usage tracking state
-  const [usageData, setUsageData] = useState({
-    photoUsed: 0,
-    photoLimit: 2,
-    audioUsed: 0,
-    audioLimit: 1,
-    videoUsed: 0,
-    videoLimit: 0,
-    textUsed: 0,
-    textLimit: 5,
-    resetDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString(),
-  });
 
   const { data: profile, isLoading, refetch } = useQuery({
     queryKey: ["profile"],
@@ -133,101 +103,7 @@ export const BillingManagement = () => {
     },
   });
 
-  const { data: diagnosticsUsage } = useQuery({
-    queryKey: ["diagnostics-usage"],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-  
-      const now = new Date();
-      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      
-      const { data, error } = await supabase
-        .from("diagnostics")
-        .select("input_type")
-        .eq("user_id", user.id)
-        .gte("created_at", firstDayOfMonth.toISOString());
-  
-      if (error) throw error;
-  
-      const counts = {
-        photo: 0,
-        audio: 0,
-        video: 0,
-        text: 0,
-      };
-  
-      data?.forEach((d) => {
-        if (d.input_type === 'photo') counts.photo++;
-        else if (d.input_type === 'audio') counts.audio++;
-        else if (d.input_type === 'video') counts.video++;
-        else if (d.input_type === 'text') counts.text++;
-      });
-  
-      return counts;
-    },
-  });
 
-  // Query for properties (if you have a properties table)
-  const { data: properties } = useQuery({
-    queryKey: ["properties"],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const { data, error } = await supabase
-        .from("properties")
-        .select("id")
-        .eq("user_id", user.id);
-
-      if (error) throw error;
-      return data || [];
-    },
-  });
-
-  useEffect(() => {
-    if (profile && diagnosticsUsage) {
-      const tier = profile.subscription_tier || "free";
-      
-      const now = new Date();
-      const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-      
-      let limits = {
-        photo: 2,
-        audio: 1,
-        video: 0,
-        text: tierLimits.free.text,
-      };
-      
-      if (tier === "pro") {
-        limits = {
-          photo: 50,
-          audio: 20,
-          video: 5,
-          text: tierLimits.pro.text,
-        };
-      } else if (tier === "business") {
-        limits = {
-          photo: 200,
-          audio: 75,
-          video: 25,
-          text: tierLimits.business.text,
-        };
-      }
-      
-      setUsageData({
-        photoUsed: diagnosticsUsage.photo || 0,
-        photoLimit: limits.photo,
-        audioUsed: diagnosticsUsage.audio || 0,
-        audioLimit: limits.audio,
-        videoUsed: diagnosticsUsage.video || 0,
-        videoLimit: limits.video,
-        textUsed: diagnosticsUsage.text || 0,
-        textLimit: limits.text,
-        resetDate: nextMonth.toISOString(),
-      });
-    }
-  }, [profile, diagnosticsUsage]);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -527,7 +403,6 @@ export const BillingManagement = () => {
   const isActive = profile?.subscription_status === "active";
   const isPaidUser = isActive && currentTier !== "free";
   const currentPlan = plans.find(p => p.tier === currentTier);
-  const effectiveTier = currentTier as keyof typeof tierLimits;
 
   return (
     <div className="space-y-6">
@@ -592,25 +467,11 @@ export const BillingManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Usage Section - Single instance with all props */}
-      <UsageSection
-        photoUsed={usageData.photoUsed}
-        photoLimit={usageData.photoLimit}
-        audioUsed={usageData.audioUsed}
-        audioLimit={usageData.audioLimit}
-        videoUsed={usageData.videoUsed}
-        videoLimit={usageData.videoLimit}
-        textUsed={usageData.textUsed}
-        textLimit={usageData.textLimit}
-        propertiesUsed={properties?.length || 0}
-        propertiesLimit={tierLimits[effectiveTier].properties}
-        resetDate={usageData.resetDate}
-        tier={effectiveTier}
-        onBuyCredits={() => {
-          toast.info("Credits purchasing feature coming soon!");
-        }}
-        onUpgrade={() => navigate('/settings?tab=billing')}
-      />
+      {/* Usage Limits Card */}
+      <UsageSection 
+  onUpgrade={() => navigate('/pricing')}
+  onBuyCredits={() => navigate('/credits')}
+/>
 
       {/* Available Plans */}
       <div>
@@ -758,17 +619,6 @@ export const BillingManagement = () => {
           )}
         </CardContent>
       </Card>
-      
-      {/* Usage Summary */}
-      <UsageSection
-        photoUsed={usageData.photoUsed}
-        photoLimit={usageData.photoLimit}
-        audioUsed={usageData.audioUsed}
-        audioLimit={usageData.audioLimit}
-        videoUsed={usageData.videoUsed}
-        videoLimit={usageData.videoLimit}
-        resetDate={usageData.resetDate}
-      />
     </div>
   );
 };

@@ -1,4 +1,6 @@
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -16,21 +18,20 @@ import {
   CreditCard
 } from 'lucide-react';
 
-interface UsageSectionProps {
-  photoUsed: number;
-  photoLimit: number;
-  audioUsed: number;
-  audioLimit: number;
-  videoUsed: number;
-  videoLimit: number;
-  textUsed: number;
-  textLimit: number;
-  propertiesUsed: number;
-  propertiesLimit: number;
-  resetDate: string;
-  tier: 'free' | 'pro' | 'business';
-  onBuyCredits?: () => void;
-  onUpgrade?: () => void;
+interface UsageData {
+  photo_usage: number;
+  video_usage: number;
+  audio_usage: number;
+  text_usage: number;
+  photo_limit: number;
+  video_limit: number;
+  audio_limit: number;
+  text_limit: number;
+  subscription_tier: string;
+  current_period_start: string;
+  current_period_end: string;
+  properties_used?: number;
+  properties_limit?: number;
 }
 
 interface UsageMetric {
@@ -41,81 +42,68 @@ interface UsageMetric {
   color: string;
 }
 
-const UsageSection: React.FC<UsageSectionProps> = ({
-  photoUsed,
-  photoLimit,
-  audioUsed,
-  audioLimit,
-  videoUsed,
-  videoLimit,
-  textUsed,
-  textLimit,
-  propertiesUsed,
-  propertiesLimit,
-  resetDate,
-  tier,
-  onBuyCredits,
-  onUpgrade
-}) => {
+interface UsageSectionProps {
+  onUpgrade?: () => void;
+  onBuyCredits?: () => void;
+}
+
+const UsageSection: React.FC<UsageSectionProps> = ({ onUpgrade, onBuyCredits }) => {
+  const { data: usage, isLoading, error } = useQuery({
+    queryKey: ['user-usage'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Fetch usage data
+      const { data: usageData, error: usageError } = await supabase
+        .from('user_usage_summary')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (usageError) throw usageError;
+
+      // Fetch property count
+      const { count: propertiesCount, error: propertiesError } = await supabase
+        .from('properties')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      if (propertiesError) throw propertiesError;
+
+      // Calculate property limit based on tier
+      const tier = usageData.subscription_tier || 'free';
+      const propertyLimits = {
+        free: 1,
+        pro: 10,
+        business: 50
+      };
+
+      return {
+        ...usageData,
+        properties_used: propertiesCount || 0,
+        properties_limit: propertyLimits[tier as keyof typeof propertyLimits] || 1
+      } as UsageData;
+    },
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+
   const getPercentage = (used: number, limit: number): number => {
     if (limit === 0) return 100;
     return Math.min(Math.round((used / limit) * 100), 100);
   };
 
   const getProgressColor = (percentage: number): string => {
-    if (percentage >= 100) return 'bg-destructive';
-    if (percentage >= 80) return 'bg-yellow-500';
+    if (percentage >= 90) return 'bg-destructive';
+    if (percentage >= 75) return 'bg-yellow-500';
     return 'bg-primary';
   };
 
   const getTextColor = (percentage: number): string => {
-    if (percentage >= 100) return 'text-destructive';
-    if (percentage >= 80) return 'text-yellow-600';
+    if (percentage >= 90) return 'text-destructive';
+    if (percentage >= 75) return 'text-yellow-600';
     return 'text-foreground';
   };
-
-  const diagnostics: UsageMetric[] = [
-    {
-      label: 'Photo Diagnostics',
-      icon: Camera,
-      used: photoUsed,
-      limit: photoLimit,
-      color: 'text-blue-600'
-    },
-    {
-      label: 'Audio Diagnostics',
-      icon: Mic,
-      used: audioUsed,
-      limit: audioLimit,
-      color: 'text-purple-600'
-    },
-    {
-      label: 'Video Diagnostics',
-      icon: Video,
-      used: videoUsed,
-      limit: videoLimit,
-      color: 'text-green-600'
-    },
-    {
-      label: 'Text Diagnostics',
-      icon: FileText,
-      used: textUsed,
-      limit: textLimit,
-      color: 'text-orange-600'
-    }
-  ];
-
-  // Check if any diagnostic type is at or near limit
-  const highestUsagePercentage = Math.max(
-    getPercentage(photoUsed, photoLimit),
-    getPercentage(audioUsed, audioLimit),
-    getPercentage(videoUsed, videoLimit),
-    getPercentage(textUsed, textLimit)
-  );
-
-  const propertiesPercentage = getPercentage(propertiesUsed, propertiesLimit);
-  const showWarning = highestUsagePercentage >= 80 || propertiesPercentage >= 80;
-  const atLimit = highestUsagePercentage >= 100 || propertiesPercentage >= 100;
 
   const formatResetDate = (dateString: string): string => {
     try {
@@ -129,6 +117,75 @@ const UsageSection: React.FC<UsageSectionProps> = ({
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center space-y-2">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-sm text-muted-foreground">Loading usage data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !usage) {
+    return (
+      <Alert className="border-destructive">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertDescription>
+          Failed to load usage data. Please try refreshing the page.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  const diagnostics: UsageMetric[] = [
+    {
+      label: 'Photo Diagnostics',
+      icon: Camera,
+      used: usage.photo_usage,
+      limit: usage.photo_limit,
+      color: 'text-blue-600'
+    },
+    {
+      label: 'Audio Diagnostics',
+      icon: Mic,
+      used: usage.audio_usage,
+      limit: usage.audio_limit,
+      color: 'text-purple-600'
+    },
+    {
+      label: 'Video Diagnostics',
+      icon: Video,
+      used: usage.video_usage,
+      limit: usage.video_limit,
+      color: 'text-green-600'
+    },
+    {
+      label: 'Text Diagnostics',
+      icon: FileText,
+      used: usage.text_usage,
+      limit: usage.text_limit,
+      color: 'text-orange-600'
+    }
+  ];
+
+  const highestUsagePercentage = Math.max(
+    getPercentage(usage.photo_usage, usage.photo_limit),
+    getPercentage(usage.audio_usage, usage.audio_limit),
+    getPercentage(usage.video_usage, usage.video_limit),
+    getPercentage(usage.text_usage, usage.text_limit)
+  );
+
+  const propertiesPercentage = usage.properties_used && usage.properties_limit 
+    ? getPercentage(usage.properties_used, usage.properties_limit)
+    : 0;
+
+  const showWarning = highestUsagePercentage >= 75 || propertiesPercentage >= 75;
+  const atLimit = highestUsagePercentage >= 90 || propertiesPercentage >= 90;
+
+  const tier = usage.subscription_tier || 'free';
+
   return (
     <div className="space-y-6">
       {/* Warning Banner */}
@@ -139,7 +196,7 @@ const UsageSection: React.FC<UsageSectionProps> = ({
             <div className="flex-1">
               {atLimit ? (
                 <span className="text-destructive font-medium">
-                  You've reached your usage limit. Upgrade your plan or purchase credits to continue.
+                  You've reached 90% of your usage limit. Upgrade your plan or purchase credits to continue.
                 </span>
               ) : (
                 <span className="text-yellow-800">
@@ -168,7 +225,7 @@ const UsageSection: React.FC<UsageSectionProps> = ({
       <div className="flex items-center justify-between text-sm text-muted-foreground bg-muted/30 p-3 rounded-lg">
         <div className="flex items-center gap-2">
           <Calendar className="w-4 h-4" />
-          <span>Quota resets on: <strong>{formatResetDate(resetDate)}</strong></span>
+          <span>Quota resets on: <strong>{formatResetDate(usage.current_period_end)}</strong></span>
         </div>
         <Badge variant="outline" className="capitalize">
           {tier} Plan
@@ -243,79 +300,99 @@ const UsageSection: React.FC<UsageSectionProps> = ({
         </Card>
 
         {/* Property Usage Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-primary" />
-              Property Management
-            </CardTitle>
-            <CardDescription>
-              Track your property capacity
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-indigo-600" />
-                  <span className="font-medium">Properties Managed</span>
+        {usage.properties_used !== undefined && usage.properties_limit !== undefined && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-primary" />
+                Property Management
+              </CardTitle>
+              <CardDescription>
+                Track your property capacity
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-indigo-600" />
+                    <span className="font-medium">Properties Managed</span>
+                  </div>
+                  <span 
+                    className={`font-semibold ${getTextColor(propertiesPercentage)}`}
+                    aria-label={`${usage.properties_used} of ${usage.properties_limit} properties managed`}
+                  >
+                    {usage.properties_used} / {usage.properties_limit}
+                  </span>
                 </div>
-                <span 
-                  className={`font-semibold ${getTextColor(propertiesPercentage)}`}
-                  aria-label={`${propertiesUsed} of ${propertiesLimit} properties managed`}
-                >
-                  {propertiesUsed} / {propertiesLimit}
-                </span>
-              </div>
-              <div className="relative">
-                <Progress 
-                  value={propertiesPercentage} 
-                  className="h-2"
-                  aria-label={`Progress: ${propertiesPercentage}% of property limit used`}
-                />
-                <div 
-                  className={`absolute top-0 left-0 h-2 rounded-full transition-all ${getProgressColor(propertiesPercentage)}`}
-                  style={{ width: `${propertiesPercentage}%` }}
-                  role="progressbar"
-                  aria-valuenow={propertiesPercentage}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                />
-              </div>
-            </div>
-
-            {/* Property Limit Information */}
-            <div className="pt-4 border-t space-y-3">
-              <div className="flex items-start gap-3 p-3 bg-accent/30 rounded-lg">
-                <div className="flex-1 text-sm">
-                  <p className="font-medium mb-1">Your Plan Includes:</p>
-                  <ul className="space-y-1 text-muted-foreground">
-                    <li>• Up to {propertiesLimit} {propertiesLimit === 1 ? 'property' : 'properties'}</li>
-                    <li>• Unlimited appliances per property</li>
-                    <li>• Full maintenance tracking</li>
-                    {tier !== 'free' && (
-                      <>
-                        <li>• Vendor management</li>
-                        <li>• Warranty tracking</li>
-                      </>
-                    )}
-                  </ul>
+                <div className="relative">
+                  <Progress 
+                    value={propertiesPercentage} 
+                    className="h-2"
+                    aria-label={`Progress: ${propertiesPercentage}% of property limit used`}
+                  />
+                  <div 
+                    className={`absolute top-0 left-0 h-2 rounded-full transition-all ${getProgressColor(propertiesPercentage)}`}
+                    style={{ width: `${propertiesPercentage}%` }}
+                    role="progressbar"
+                    aria-valuenow={propertiesPercentage}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                  />
                 </div>
               </div>
 
-              {propertiesPercentage >= 80 && tier === 'free' && (
-                <div className="text-sm text-muted-foreground bg-primary/5 p-3 rounded-lg border border-primary/20">
-                  <p className="font-medium text-primary mb-1">Need more properties?</p>
-                  <p>Upgrade to Pro for 10 properties or Business for 50 properties.</p>
+              <div className="pt-4 border-t space-y-3">
+                <div className="flex items-start gap-3 p-3 bg-accent/30 rounded-lg">
+                  <div className="flex-1 text-sm">
+                    <p className="font-medium mb-1">Your Plan Includes:</p>
+                    <ul className="space-y-1 text-muted-foreground">
+                      <li>• Up to {usage.properties_limit} {usage.properties_limit === 1 ? 'property' : 'properties'}</li>
+                      <li>• Unlimited appliances per property</li>
+                      <li>• Full maintenance tracking</li>
+                      {tier !== 'free' && (
+                        <>
+                          <li>• Vendor management</li>
+                          <li>• Warranty tracking</li>
+                        </>
+                      )}
+                    </ul>
+                  </div>
                 </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+
+                {/* Property Limits by Plan */}
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Property Limits by Plan:</p>
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div className={`p-2 rounded-lg border ${tier === 'free' ? 'bg-primary/10 border-primary' : 'bg-muted/50'}`}>
+                      <p className="font-semibold text-center">Free</p>
+                      <p className="text-center text-muted-foreground mt-1">1 property</p>
+                    </div>
+                    <div className={`p-2 rounded-lg border ${tier === 'pro' ? 'bg-primary/10 border-primary' : 'bg-muted/50'}`}>
+                      <p className="font-semibold text-center">Pro</p>
+                      <p className="text-center text-muted-foreground mt-1">10 properties</p>
+                    </div>
+                    <div className={`p-2 rounded-lg border ${tier === 'business' ? 'bg-primary/10 border-primary' : 'bg-muted/50'}`}>
+                      <p className="font-semibold text-center">Business</p>
+                      <p className="text-center text-muted-foreground mt-1">50 properties</p>
+                    </div>
+                  </div>
+                </div>
+
+                {propertiesPercentage >= 75 && tier === 'free' && (
+                  <div className="text-sm text-muted-foreground bg-primary/5 p-3 rounded-lg border border-primary/20">
+                    <p className="font-medium text-primary mb-1">Need more properties?</p>
+                    <p>Upgrade to Pro for 10 properties or Business for 50 properties.</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Action Buttons */}
-      {tier === 'free' && (
+      {tier === 'free' && onUpgrade && (
         <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
           <CardContent className="pt-6">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -325,11 +402,9 @@ const UsageSection: React.FC<UsageSectionProps> = ({
                   Upgrade to Pro or Business for higher limits and advanced features
                 </p>
               </div>
-              {onUpgrade && (
-                <Button size="lg" onClick={onUpgrade} className="flex-shrink-0">
-                  Upgrade Now
-                </Button>
-              )}
+              <Button size="lg" onClick={onUpgrade} className="flex-shrink-0">
+                Upgrade Now
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -338,69 +413,4 @@ const UsageSection: React.FC<UsageSectionProps> = ({
   );
 };
 
-// Example Usage
-const UsageSectionDemo = () => {
-  const [showBuyCredits, setShowBuyCredits] = React.useState(false);
-
-  // Example data for Free tier user
-  const exampleData = {
-    photoUsed: 2,
-    photoLimit: 2,
-    audioUsed: 0,
-    audioLimit: 0,
-    videoUsed: 0,
-    videoLimit: 0,
-    textUsed: 1,
-    textLimit: 2,
-    propertiesUsed: 1,
-    propertiesLimit: 1,
-    resetDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString(),
-    tier: 'free' as const
-  };
-
-  return (
-    <div className="min-h-screen bg-background p-8">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Usage & Billing</h1>
-          <p className="text-muted-foreground">
-            Monitor your usage and manage your subscription
-          </p>
-        </div>
-
-        <UsageSection
-          {...exampleData}
-          onBuyCredits={() => setShowBuyCredits(true)}
-          onUpgrade={() => console.log('Navigate to upgrade')}
-        />
-
-        {showBuyCredits && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <Card className="max-w-md w-full">
-              <CardHeader>
-                <CardTitle>Buy Additional Credits</CardTitle>
-                <CardDescription>
-                  Purchase credit packs for one-time use
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  This feature would integrate with your existing credit purchase flow.
-                </p>
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => setShowBuyCredits(false)}
-                >
-                  Close
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-export default UsageSectionDemo;
+export default UsageSection;
