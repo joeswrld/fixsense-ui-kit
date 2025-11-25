@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, Upload, DollarSign, CheckCircle2, Clock } from "lucide-react";
 import { toast } from "sonner";
 
@@ -17,11 +18,29 @@ interface MaintenanceHistoryProps {
 export const MaintenanceHistory = ({ applianceId }: MaintenanceHistoryProps) => {
   const [open, setOpen] = useState(false);
   const [maintenanceType, setMaintenanceType] = useState("");
+  const [vendorId, setVendorId] = useState("");
   const [cost, setCost] = useState("");
   const [notes, setNotes] = useState("");
   const [beforePhoto, setBeforePhoto] = useState<File | null>(null);
   const [afterPhoto, setAfterPhoto] = useState<File | null>(null);
   const queryClient = useQueryClient();
+
+  const { data: vendors } = useQuery({
+    queryKey: ["vendors"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase
+        .from("vendors")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("name", { ascending: true });
+
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const { data: history, isLoading } = useQuery({
     queryKey: ["maintenance-history", applianceId],
@@ -31,7 +50,14 @@ export const MaintenanceHistory = ({ applianceId }: MaintenanceHistoryProps) => 
 
       const { data, error } = await supabase
         .from("maintenance_history")
-        .select("*")
+        .select(`
+          *,
+          vendors (
+            name,
+            contact_phone,
+            contact_email
+          )
+        `)
         .eq("appliance_id", applianceId)
         .eq("user_id", user.id)
         .order("maintenance_date", { ascending: false });
@@ -82,6 +108,7 @@ export const MaintenanceHistory = ({ applianceId }: MaintenanceHistoryProps) => 
         .insert({
           appliance_id: applianceId,
           user_id: user.id,
+          vendor_id: vendorId || null,
           maintenance_type: maintenanceType,
           cost: cost ? parseFloat(cost) : null,
           notes,
@@ -96,6 +123,7 @@ export const MaintenanceHistory = ({ applianceId }: MaintenanceHistoryProps) => 
       queryClient.invalidateQueries({ queryKey: ["maintenance-history", applianceId] });
       setOpen(false);
       setMaintenanceType("");
+      setVendorId("");
       setCost("");
       setNotes("");
       setBeforePhoto(null);
@@ -137,6 +165,21 @@ export const MaintenanceHistory = ({ applianceId }: MaintenanceHistoryProps) => 
                     value={maintenanceType}
                     onChange={(e) => setMaintenanceType(e.target.value)}
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="vendor">Service Vendor (Optional)</Label>
+                  <Select value={vendorId} onValueChange={setVendorId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a vendor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {vendors?.map((vendor) => (
+                        <SelectItem key={vendor.id} value={vendor.id}>
+                          {vendor.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="cost">Cost ($)</Label>
@@ -203,6 +246,11 @@ export const MaintenanceHistory = ({ applianceId }: MaintenanceHistoryProps) => 
                       <Calendar className="w-4 h-4" />
                       {new Date(record.maintenance_date).toLocaleDateString()}
                     </p>
+                    {record.vendors && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Vendor: {record.vendors.name}
+                      </p>
+                    )}
                   </div>
                   {record.cost && (
                     <div className="flex items-center gap-1 font-semibold text-primary">
