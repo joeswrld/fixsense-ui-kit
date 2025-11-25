@@ -13,6 +13,7 @@ export const NotificationPreferences = () => {
   const [saving, setSaving] = useState(false);
   const [preferences, setPreferences] = useState({
     maintenance_reminders: true,
+    warranty_expiration: true,
     critical_diagnostics: true,
     weekly_summary: false,
   });
@@ -104,6 +105,24 @@ export const NotificationPreferences = () => {
             checked={preferences.maintenance_reminders}
             onCheckedChange={(checked) =>
               setPreferences({ ...preferences, maintenance_reminders: checked })
+            }
+          />
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label htmlFor="warranty-expiration" className="text-base">
+              Warranty Expiration Alerts
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              Get notified 30 days before warranties expire
+            </p>
+          </div>
+          <Switch
+            id="warranty-expiration"
+            checked={preferences.warranty_expiration}
+            onCheckedChange={(checked) =>
+              setPreferences({ ...preferences, warranty_expiration: checked })
             }
           />
         </div>

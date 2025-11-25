@@ -7,12 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Users, Plus, Phone, Mail, Globe, Star, Loader2, MapPin } from "lucide-react";
+import { Users, Plus, Phone, Mail, Globe, Star, Loader2, MapPin, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { VendorAnalytics } from "./VendorAnalytics";
+import { VendorBooking } from "./VendorBooking";
+import { VendorComparison } from "./VendorComparison";
 
 export const VendorDirectory = () => {
   const [open, setOpen] = useState(false);
+  const [analyticsVendorId, setAnalyticsVendorId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -114,13 +118,15 @@ export const VendorDirectory = () => {
             </CardTitle>
             <CardDescription>Manage your trusted service providers</CardDescription>
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Vendor
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            <VendorComparison />
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Vendor
+                </Button>
+              </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Add Service Vendor</DialogTitle>
@@ -205,6 +211,7 @@ export const VendorDirectory = () => {
               </div>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -216,7 +223,7 @@ export const VendorDirectory = () => {
           <p className="text-muted-foreground text-center py-8">No vendors added yet</p>
         ) : (
           <div className="space-y-4">
-            {vendors.map((vendor) => (
+              {vendors.map((vendor) => (
               <div key={vendor.id} className="border rounded-lg p-4 space-y-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -238,6 +245,17 @@ export const VendorDirectory = () => {
                         ))}
                       </div>
                     )}
+                  </div>
+                  <div className="flex gap-2">
+                    <VendorBooking vendorId={vendor.id} vendorName={vendor.name} />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAnalyticsVendorId(vendor.id)}
+                    >
+                      <BarChart3 className="w-4 h-4 mr-2" />
+                      Analytics
+                    </Button>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
@@ -285,6 +303,17 @@ export const VendorDirectory = () => {
           </div>
         )}
       </CardContent>
+
+      {/* Analytics Dialog */}
+      <Dialog open={!!analyticsVendorId} onOpenChange={(open) => !open && setAnalyticsVendorId(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Vendor Analytics</DialogTitle>
+            <DialogDescription>Performance metrics and service history</DialogDescription>
+          </DialogHeader>
+          {analyticsVendorId && <VendorAnalytics vendorId={analyticsVendorId} />}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
