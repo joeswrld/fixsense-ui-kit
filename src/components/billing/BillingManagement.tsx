@@ -16,43 +16,43 @@ const plans = [
     tier: "free",
     features: [
       "2 photo diagnostics per month",
-      "1 audio diagnostic per month", 
-      "0 video diagnostics",
+      "0 audio diagnostics",
+      "0 video diagnostics (upgrade to unlock)",
+      "3 text diagnostics per month",
+      "1 property",
       "Basic support",
-      "View past reports"
     ],
   },
   {
     name: "Pro",
-    price: 350000, // ₦3,500 in kobo
+    price: 530000, // ₦5,300 in kobo
     tier: "pro",
     features: [
-      "50 photo diagnostics per month",
-      "20 audio diagnostics per month",
-      "5 video diagnostics per month",
+      "30 photo diagnostics per month",
+      "10 audio diagnostics per month",
+      "2 video diagnostics per month",
+      "40 text diagnostics per month",
+      "5 properties",
       "Full history",
-      "Price predictions",
-      "Scam protection alerts",
       "Priority support",
     ],
     popular: true,
   },
   {
     name: "Host Business",
-    price: 650000, // ₦6,500 in kobo
+    price: 880000, // ₦8,800 in kobo
     tier: "business",
     features: [
-      "200 photo diagnostics per month",
-      "75 audio diagnostics per month",
-      "25 video diagnostics per month",
-      "Multi-property support",
-      "Team access",
+      "60 photo diagnostics per month",
+      "20 audio diagnostics per month",
+      "5 video diagnostics per month",
+      "150 text diagnostics per month",
+      "30 properties",
       "Advanced analytics",
       "Dedicated support",
     ],
   },
 ];
-
 interface Transaction {
   id: string;
   amount: number;
