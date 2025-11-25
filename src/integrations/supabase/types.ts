@@ -156,6 +156,7 @@ export type Database = {
           notes: string | null
           updated_at: string
           user_id: string
+          vendor_id: string | null
         }
         Insert: {
           after_photo_url?: string | null
@@ -170,6 +171,7 @@ export type Database = {
           notes?: string | null
           updated_at?: string
           user_id: string
+          vendor_id?: string | null
         }
         Update: {
           after_photo_url?: string | null
@@ -184,6 +186,7 @@ export type Database = {
           notes?: string | null
           updated_at?: string
           user_id?: string
+          vendor_id?: string | null
         }
         Relationships: [
           {
@@ -191,6 +194,13 @@ export type Database = {
             columns: ["appliance_id"]
             isOneToOne: false
             referencedRelation: "appliances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_history_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
         ]
@@ -272,10 +282,13 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
           diagnostics_used_this_month: number | null
           email: string | null
           full_name: string | null
           id: string
+          monthly_usage_limits: Json | null
           notification_preferences: Json | null
           paystack_customer_code: string | null
           paystack_subscription_code: string | null
@@ -288,10 +301,13 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
           diagnostics_used_this_month?: number | null
           email?: string | null
           full_name?: string | null
           id: string
+          monthly_usage_limits?: Json | null
           notification_preferences?: Json | null
           paystack_customer_code?: string | null
           paystack_subscription_code?: string | null
@@ -304,10 +320,13 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
           diagnostics_used_this_month?: number | null
           email?: string | null
           full_name?: string | null
           id?: string
+          monthly_usage_limits?: Json | null
           notification_preferences?: Json | null
           paystack_customer_code?: string | null
           paystack_subscription_code?: string | null
@@ -390,6 +409,48 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_usage_summary"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      usage_tracking: {
+        Row: {
+          created_at: string
+          diagnostic_id: string | null
+          id: string
+          input_type: string
+          subscription_tier: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          diagnostic_id?: string | null
+          id?: string
+          input_type: string
+          subscription_tier: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          diagnostic_id?: string | null
+          id?: string
+          input_type?: string
+          subscription_tier?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usage_tracking_diagnostic_id_fkey"
+            columns: ["diagnostic_id"]
+            isOneToOne: false
+            referencedRelation: "diagnostics"
             referencedColumns: ["id"]
           },
         ]
@@ -567,11 +628,56 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_usage_summary"
+            referencedColumns: ["user_id"]
+          },
         ]
+      }
+      user_usage_summary: {
+        Row: {
+          audio_limit: number | null
+          audio_usage: number | null
+          current_period_end: string | null
+          current_period_start: string | null
+          email: string | null
+          photo_limit: number | null
+          photo_usage: number | null
+          subscription_tier: string | null
+          text_limit: number | null
+          text_usage: number | null
+          user_id: string | null
+          video_limit: number | null
+          video_usage: number | null
+        }
+        Relationships: []
       }
     }
     Functions: {
-      [_ in never]: never
+      can_create_diagnostic: {
+        Args: { p_input_type: string; p_user_id: string }
+        Returns: boolean
+      }
+      get_monthly_usage: {
+        Args: { p_user_id: string }
+        Returns: {
+          count: number
+          input_type: string
+        }[]
+      }
+      get_vendor_stats: {
+        Args: { p_vendor_id: string }
+        Returns: {
+          avg_rating: number
+          rating_count: number
+          total_cost: number
+          total_services: number
+        }[]
+      }
+      reset_monthly_usage: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

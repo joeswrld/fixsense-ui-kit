@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Crown, Loader2, Receipt, Calendar, CreditCard, Download } from "lucide-react";
 import { toast } from "sonner";
-import { UsageSection } from '@/components/UsageSection';
+import { UsageLimitsCard } from '@/components/UsageSection';
 
 const plans = [
   {
@@ -701,15 +701,7 @@ export const BillingManagement = () => {
       </Card>
       
       {/* Usage Summary */}
-      <UsageSection
-        photoUsed={usageData.photoUsed}
-        photoLimit={usageData.photoLimit}
-        audioUsed={usageData.audioUsed}
-        audioLimit={usageData.audioLimit}
-        videoUsed={usageData.videoUsed}
-        videoLimit={usageData.videoLimit}
-        resetDate={usageData.resetDate}
-      />
+      <UsageLimitsCard />
     </div>
   );
 };
