@@ -173,7 +173,7 @@ const Result = () => {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-primary mb-4">
-                ${diagnostic.estimated_cost_min} - ${diagnostic.estimated_cost_max}
+              ₦{diagnostic.estimated_cost_min} - ${diagnostic.estimated_cost_max}
               </div>
               <p className="text-sm text-muted-foreground">
                 Prices may vary by location and technician. Always get multiple quotes.
