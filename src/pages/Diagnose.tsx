@@ -125,10 +125,26 @@ const Diagnose = () => {
     setAnalyzing(true);
     
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      // Get current session first to ensure authentication
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !sessionData.session) {
+        console.error("Session error:", sessionError);
         toast({
-          title: "Error",
+          title: "Authentication Error",
+          description: "Your session has expired. Please sign in again.",
+          variant: "destructive",
+        });
+        navigate("/auth");
+        return;
+      }
+
+      const user = sessionData.session.user;
+      const accessToken = sessionData.session.access_token;
+
+      if (!user || !accessToken) {
+        toast({
+          title: "Authentication Error",
           description: "You must be logged in to diagnose.",
           variant: "destructive",
         });
@@ -138,6 +154,7 @@ const Diagnose = () => {
 
       let fileUrl = null;
 
+      // Handle file upload if not text input
       if (file && inputType !== "text") {
         setUploading(true);
         const fileExt = file.name.split('.').pop();
@@ -147,7 +164,7 @@ const Diagnose = () => {
           setUploadProgress(prev => Math.min(prev + 10, 90));
         }, 100);
 
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from('diagnostics')
           .upload(fileName, file);
 
@@ -163,14 +180,13 @@ const Diagnose = () => {
         setUploading(false);
       }
 
-      const { data: session } = await supabase.auth.getSession();
-      
+      // Call the diagnostic function with proper authentication
       const response = await fetch(
         `https://nflwheveqglnxgfmimpq.supabase.co/functions/v1/diagnose-appliance`,
         {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${session.session?.access_token}`,
+            'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
@@ -184,14 +200,15 @@ const Diagnose = () => {
       );
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({ error: 'Analysis failed' }));
+        console.error("API error:", errorData);
         throw new Error(errorData.error || 'Analysis failed');
       }
 
       const { diagnostic } = await response.json();
 
       // Refetch usage after successful diagnostic
-      refetchUsage();
+      await refetchUsage();
 
       toast({
         title: "Analysis Complete",
@@ -200,7 +217,7 @@ const Diagnose = () => {
 
       navigate(`/result/${diagnostic.id}`);
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Error during diagnosis:", error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to analyze. Please try again.",
