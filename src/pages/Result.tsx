@@ -4,12 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Wrench, ArrowLeft, FileText, AlertTriangle, CheckCircle2, DollarSign, Loader2, Download } from "lucide-react";
+import { Wrench, ArrowLeft, FileText, AlertTriangle, CheckCircle2, DollarSign, Loader2, Download, PlayCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { exportDiagnosticToPDF } from "@/lib/pdfExport";
 import { useToast } from "@/hooks/use-toast";
-
 import { AppHeader } from "@/components/AppHeader";
 
 interface Diagnostic {
@@ -22,6 +21,18 @@ interface Diagnostic {
   scam_alerts: string[];
   fix_instructions: string;
   created_at: string;
+  appliances?: {
+    name: string;
+    type: string;
+  } | null;
+}
+
+interface YouTubeVideo {
+  id: string;
+  title: string;
+  thumbnail: string;
+  channelTitle: string;
+  duration: string;
 }
 
 const Result = () => {
@@ -31,6 +42,8 @@ const Result = () => {
   const [diagnostic, setDiagnostic] = useState<Diagnostic | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [youtubeVideos, setYoutubeVideos] = useState<YouTubeVideo[]>([]);
+  const [loadingVideos, setLoadingVideos] = useState(false);
 
   useEffect(() => {
     fetchDiagnostic();
@@ -46,7 +59,10 @@ const Result = () => {
 
       const { data, error } = await supabase
         .from("diagnostics")
-        .select("*")
+        .select(`
+          *,
+          appliances (name, type)
+        `)
         .eq("id", id)
         .eq("user_id", user.id)
         .single();
@@ -54,6 +70,11 @@ const Result = () => {
       if (error) throw error;
 
       setDiagnostic(data);
+      
+      // Fetch YouTube videos based on the diagnosis
+      if (data) {
+        fetchYouTubeVideos(data);
+      }
     } catch (error) {
       console.error("Error fetching diagnostic:", error);
       navigate("/dashboard");
@@ -62,17 +83,45 @@ const Result = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-accent/10 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  const fetchYouTubeVideos = async (diagnosticData: Diagnostic) => {
+    setLoadingVideos(true);
+    try {
+      // Create a search query based on the diagnostic data
+      const applianceType = diagnosticData.appliances?.type || "appliance";
+      const mainCause = diagnosticData.probable_causes[0] || "repair";
+      
+      // Build search query
+      const searchQuery = `how to fix ${applianceType} ${mainCause} repair tutorial`;
+      
+      // YouTube API endpoint (you'll need to add your API key)
+      const API_KEY = "YOUR_YOUTUBE_API_KEY"; // Store this in environment variables
+      const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(searchQuery)}&type=video&maxResults=3&key=${API_KEY}`;
 
-  if (!diagnostic) {
-    return null;
-  }
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch YouTube videos");
+      }
+
+      const data = await response.json();
+      
+      // Transform the response to our format
+      const videos: YouTubeVideo[] = data.items.map((item: any) => ({
+        id: item.id.videoId,
+        title: item.snippet.title,
+        thumbnail: item.snippet.thumbnails.medium.url,
+        channelTitle: item.snippet.channelTitle,
+        duration: "" // We'll keep this empty or you can fetch it with an additional API call
+      }));
+
+      setYoutubeVideos(videos);
+    } catch (error) {
+      console.error("Error fetching YouTube videos:", error);
+      // Fail silently - the page will still work without videos
+    } finally {
+      setLoadingVideos(false);
+    }
+  };
 
   const handleExportPDF = async () => {
     if (!diagnostic) return;
@@ -95,6 +144,18 @@ const Result = () => {
       setExporting(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-accent/10 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!diagnostic) {
+    return null;
+  }
 
   const urgencyConfig = {
     critical: { label: "Critical - Immediate attention needed", variant: "destructive" as const },
@@ -164,6 +225,60 @@ const Result = () => {
             </CardContent>
           </Card>
 
+          {/* YouTube Video Recommendations */}
+          {youtubeVideos.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <PlayCircle className="w-5 h-5 text-red-600" />
+                  Recommended Repair Videos
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loadingVideos ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                    <span className="ml-2 text-muted-foreground">Finding helpful videos...</span>
+                  </div>
+                ) : (
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {youtubeVideos.map((video) => (
+                      <a
+                        key={video.id}
+                        href={`https://www.youtube.com/watch?v=${video.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group block rounded-lg overflow-hidden border hover:border-primary transition-all hover:shadow-lg"
+                      >
+                        <div className="relative aspect-video">
+                          <img 
+                            src={video.thumbnail} 
+                            alt={video.title}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-all flex items-center justify-center">
+                            <PlayCircle className="w-12 h-12 text-white/90" />
+                          </div>
+                        </div>
+                        <div className="p-3">
+                          <h3 className="font-medium text-sm line-clamp-2 mb-1 group-hover:text-primary transition-colors">
+                            {video.title}
+                          </h3>
+                          <p className="text-xs text-muted-foreground">
+                            {video.channelTitle}
+                          </p>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground mt-4 text-center">
+                  💡 Watch these tutorials to learn how to fix the issue yourself
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -173,7 +288,7 @@ const Result = () => {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-primary mb-4">
-              ₦{diagnostic.estimated_cost_min} - ${diagnostic.estimated_cost_max}
+                ₦{diagnostic.estimated_cost_min} - ₦{diagnostic.estimated_cost_max}
               </div>
               <p className="text-sm text-muted-foreground">
                 Prices may vary by location and technician. Always get multiple quotes.
