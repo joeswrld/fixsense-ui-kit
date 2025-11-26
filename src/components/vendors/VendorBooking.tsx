@@ -47,33 +47,54 @@ export const VendorBooking = ({ vendorId, vendorName }: VendorBookingProps) => {
     },
   });
 
-  const bookingMutation = useMutation({
-    mutationFn: async () => {
+  const bookServiceMutation = useMutation({
+    mutationFn: async (booking: any) => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      if (!user) throw new Error('Not authenticated');
 
-      const { error } = await supabase.from("vendor_bookings").insert({
-        user_id: user.id,
-        vendor_id: vendorId,
-        appliance_id: applianceId || null,
-        service_type: serviceType,
-        scheduled_date: scheduledDate,
-        scheduled_time: scheduledTime,
-        notes: notes || null,
-        status: "pending",
-      });
+      const { data, error } = await supabase
+        .from('vendor_bookings')
+        .insert({
+          vendor_id: vendorId,
+          user_id: user.id,
+          ...booking,
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+      return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["vendor-bookings"] });
+    onSuccess: async (booking) => {
+      queryClient.invalidateQueries({ queryKey: ['vendor-bookings'] });
+      
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        await fetch(
+          `https://nflwheveqglnxgfmimpq.supabase.co/functions/v1/send-booking-notification`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session?.access_token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              bookingId: booking.id,
+              action: 'create',
+            }),
+          }
+        );
+      } catch (error) {
+        console.error("Failed to send booking notification:", error);
+      }
+      
+      toast.success("Booking request sent successfully");
       setOpen(false);
       setServiceType("");
       setApplianceId("");
       setScheduledDate("");
       setScheduledTime("");
       setNotes("");
-      toast.success("Booking request sent successfully");
     },
     onError: (error) => {
       toast.error("Failed to create booking");
@@ -154,11 +175,18 @@ export const VendorBooking = ({ vendorId, vendorName }: VendorBookingProps) => {
           </div>
 
           <Button
-            onClick={() => bookingMutation.mutate()}
-            disabled={!serviceType || !scheduledDate || !scheduledTime || bookingMutation.isPending}
+            onClick={() => bookServiceMutation.mutate({
+              service_type: serviceType,
+              appliance_id: applianceId || null,
+              scheduled_date: scheduledDate,
+              scheduled_time: scheduledTime,
+              notes: notes || null,
+              status: "pending",
+            })}
+            disabled={!serviceType || !scheduledDate || !scheduledTime || bookServiceMutation.isPending}
             className="w-full"
           >
-            {bookingMutation.isPending ? "Booking..." : "Confirm Booking"}
+            {bookServiceMutation.isPending ? "Booking..." : "Confirm Booking"}
           </Button>
         </div>
       </DialogContent>

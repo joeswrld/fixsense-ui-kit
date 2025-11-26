@@ -14,6 +14,7 @@ import Settings from "./pages/Settings";
 import ResultDemo from "./pages/ResultDemo";
 import Result from "./pages/Result";
 import History from "./pages/History";
+import VendorCalendar from "./pages/VendorCalendar";
 import Calendar from "./pages/Calendar";
 import NotFound from "./pages/NotFound";
 
@@ -34,10 +35,11 @@ const App = () => (
           <Route path="/appliances/:id" element={<ApplianceDetail />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/settings" element={<Settings />} />
-        <Route path="/result-demo" element={<ResultDemo />} />
-        <Route path="/result/:id" element={<Result />} />
+          <Route path="/result-demo" element={<ResultDemo />} />
+          <Route path="/result/:id" element={<Result />} />
           <Route path="/history" element={<History />} />
           <Route path="/calendar" element={<Calendar />} />
+          <Route path="/vendor-calendar" element={<VendorCalendar />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

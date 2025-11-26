@@ -210,8 +210,9 @@ You are an expert appliance repair diagnostic AI. Provide structured JSON:
     );
   } catch (err) {
     console.error("Fatal error:", err);
+    const errorMessage = err instanceof Error ? err.message : "Internal server error";
     return new Response(
-      JSON.stringify({ error: err.message || "Internal server error" }),
+      JSON.stringify({ error: errorMessage }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
     );
   }

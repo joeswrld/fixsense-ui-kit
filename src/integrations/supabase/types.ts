@@ -420,6 +420,24 @@ export type Database = {
           },
         ]
       }
+      usage_reset_log: {
+        Row: {
+          id: string
+          records_deleted: number | null
+          reset_date: string
+        }
+        Insert: {
+          id?: string
+          records_deleted?: number | null
+          reset_date?: string
+        }
+        Update: {
+          id?: string
+          records_deleted?: number | null
+          reset_date?: string
+        }
+        Relationships: []
+      }
       usage_tracking: {
         Row: {
           created_at: string
@@ -714,6 +732,7 @@ export type Database = {
       }
     }
     Functions: {
+      can_add_property: { Args: { p_user_id: string }; Returns: boolean }
       can_create_diagnostic: {
         Args: { p_input_type: string; p_user_id: string }
         Returns: boolean
@@ -735,6 +754,7 @@ export type Database = {
         }[]
       }
       reset_monthly_usage: { Args: never; Returns: undefined }
+      reset_monthly_usage_with_log: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
