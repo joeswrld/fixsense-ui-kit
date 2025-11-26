@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -67,6 +68,7 @@ export const BillingManagement = () => {
   const [processingPlan, setProcessingPlan] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
   const [downloadingReceipt, setDownloadingReceipt] = useState<string | null>(null);
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const { data: profile, isLoading, refetch } = useQuery({

@@ -13,10 +13,12 @@ import { Badge } from "@/components/ui/badge";
 import { VendorAnalytics } from "./VendorAnalytics";
 import { VendorBooking } from "./VendorBooking";
 import { VendorComparison } from "./VendorComparison";
+import { VendorReviews } from "./VendorReviews";
 
 export const VendorDirectory = () => {
   const [open, setOpen] = useState(false);
   const [analyticsVendorId, setAnalyticsVendorId] = useState<string | null>(null);
+  const [reviewsVendorId, setReviewsVendorId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -256,6 +258,14 @@ export const VendorDirectory = () => {
                       <BarChart3 className="w-4 h-4 mr-2" />
                       Analytics
                     </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setReviewsVendorId(vendor.id)}
+                    >
+                      <Star className="w-4 h-4 mr-2" />
+                      Reviews
+                    </Button>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
@@ -312,6 +322,18 @@ export const VendorDirectory = () => {
             <DialogDescription>Performance metrics and service history</DialogDescription>
           </DialogHeader>
           {analyticsVendorId && <VendorAnalytics vendorId={analyticsVendorId} />}
+        </DialogContent>
+      </Dialog>
+
+      {/* Reviews Dialog */}
+      <Dialog open={!!reviewsVendorId} onOpenChange={(open) => !open && setReviewsVendorId(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          {reviewsVendorId && (
+            <VendorReviews
+              vendorId={reviewsVendorId}
+              vendorName={vendors?.find(v => v.id === reviewsVendorId)?.name || ''}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </Card>
