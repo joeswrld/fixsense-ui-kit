@@ -108,6 +108,25 @@ const Diagnose = () => {
   };
 
   const handleSubmit = async () => {
+    // Validation
+    if (!description.trim()) {
+      toast({
+        title: "Description Required",
+        description: "Please provide a description of the problem.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (inputType !== "text" && !file) {
+      toast({
+        title: "File Required",
+        description: "Please upload a file for this diagnostic type.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Final usage check before submission
     const check = checkUsage(inputType as 'photo' | 'video' | 'audio' | 'text');
     
@@ -173,12 +192,20 @@ const Diagnose = () => {
 
         if (uploadError) {
           console.error("Upload error:", uploadError);
-          throw new Error("Failed to upload file");
+          throw new Error(`Failed to upload file: ${uploadError.message}`);
         }
 
-        fileUrl = `diagnostics/${fileName}`;
+        fileUrl = fileName; // Store just the file path, not the full bucket path
         setUploading(false);
       }
+
+      console.log("Sending diagnostic request with:", {
+        fileUrl,
+        description: description.substring(0, 50) + "...",
+        inputType,
+        propertyId: selectedProperty || null,
+        applianceId: selectedAppliance || null,
+      });
 
       // Call the diagnostic function with proper authentication
       const response = await fetch(
@@ -199,13 +226,37 @@ const Diagnose = () => {
         }
       );
 
+      const responseText = await response.text();
+      console.log("Raw response:", responseText);
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Analysis failed' }));
-        console.error("API error:", errorData);
-        throw new Error(errorData.error || 'Analysis failed');
+        let errorData;
+        try {
+          errorData = JSON.parse(responseText);
+        } catch {
+          errorData = { error: responseText || 'Analysis failed' };
+        }
+        
+        console.error("API error:", {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        });
+        
+        throw new Error(errorData.error || errorData.message || `Server error: ${response.status}`);
       }
 
-      const { diagnostic } = await response.json();
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch {
+        throw new Error("Invalid response from server");
+      }
+
+      if (!result.diagnostic || !result.diagnostic.id) {
+        console.error("Invalid diagnostic response:", result);
+        throw new Error("Invalid response: missing diagnostic data");
+      }
 
       // Refetch usage after successful diagnostic
       await refetchUsage();
@@ -215,7 +266,7 @@ const Diagnose = () => {
         description: "Your diagnostic results are ready.",
       });
 
-      navigate(`/result/${diagnostic.id}`);
+      navigate(`/result/${result.diagnostic.id}`);
     } catch (error) {
       console.error("Error during diagnosis:", error);
       toast({
@@ -453,7 +504,7 @@ const Diagnose = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
+                    <Label htmlFor="description">Description *</Label>
                     <Textarea
                       id="description"
                       placeholder="Describe what's happening, when it started, any unusual behaviors..."
@@ -468,7 +519,7 @@ const Diagnose = () => {
                     className="w-full" 
                     size="lg" 
                     onClick={handleSubmit}
-                    disabled={uploading || analyzing || currentTypeCheck.isAtLimit || (inputType !== "text" && !file)}
+                    disabled={uploading || analyzing || currentTypeCheck.isAtLimit || !description.trim() || (inputType !== "text" && !file)}
                   >
                     {currentTypeCheck.isAtLimit ? (
                       <>
