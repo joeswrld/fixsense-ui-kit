@@ -14,10 +14,10 @@ export const Header = () => {
         </Link>
 
         <nav className="hidden md:flex items-center gap-6">
-          <Link to="/#features" className="text-sm font-medium hover:text-primary transition-colors">
+          <Link to="/features" className="text-sm font-medium hover:text-primary transition-colors">
             Features
           </Link>
-          <Link to="/#pricing" className="text-sm font-medium hover:text-primary transition-colors">
+          <Link to="/pricing" className="text-sm font-medium hover:text-primary transition-colors">
             Pricing
           </Link>
         </nav>

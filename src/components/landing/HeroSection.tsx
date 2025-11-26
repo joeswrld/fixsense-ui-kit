@@ -32,9 +32,6 @@ export const HeroSection = () => {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
             <Button size="lg" asChild className="min-w-[200px]">
-              <Link to="/diagnose">Try Demo</Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild className="min-w-[200px]">
               <Link to="/auth">Sign Up Free</Link>
             </Button>
           </div>

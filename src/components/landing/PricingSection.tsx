@@ -7,47 +7,49 @@ import { Link } from "react-router-dom";
 const plans = [
   {
     name: "Free",
-    price: "$0",
+    price: "₦0",
     period: "/month",
     features: [
-      "2 diagnostics per month",
-      "Basic AI analysis",
-      "Cost estimates",
-      "Email support"
+      "2 photo diagnostics per month",
+      "0 audio diagnostics (upgrade to unlock)",
+      "0 video diagnostics (upgrade to unlock)",
+      "3 text diagnostics per month",
+      "1 property",
+      "Basic support",
     ],
     cta: "Get Started",
     popular: false
   },
   {
     name: "Pro",
-    price: "$29",
+    price: "₦5,300",
     period: "/month",
     features: [
-      "Unlimited diagnostics",
-      "Advanced AI analysis",
-      "Full diagnostic history",
-      "Price predictions",
-      "Scam alerts & red flags",
+      "30 photo diagnostics per month",
+      "10 audio diagnostics per month",
+      "2 video diagnostics per month",
+      "40 text diagnostics per month",
+      "5 properties",
+      "Full history",
       "Priority support",
-      "PDF reports"
     ],
-    cta: "Start Free Trial",
+    cta: "Get Started",
     popular: true
   },
   {
     name: "Host Business",
-    price: "$99",
+    price: "₦8,800",
     period: "/month",
     features: [
-      "Everything in Pro",
-      "Multi-property support",
-      "Team access (up to 5)",
-      "Property asset management",
-      "Maintenance calendar",
-      "API access",
-      "Dedicated support"
+      "60 photo diagnostics per month",
+      "20 audio diagnostics per month",
+      "5 video diagnostics per month",
+      "150 text diagnostics per month",
+      "30 properties",
+      "Advanced analytics",
+      "Dedicated support",
     ],
-    cta: "Contact Sales",
+    cta: "Get Started",
     popular: false
   }
 ];
