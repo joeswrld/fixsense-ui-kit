@@ -13,6 +13,8 @@ interface UsageLimits {
   properties_used: number;
   properties_limit: number;
   subscription_tier: string;
+  current_period_start?: string;
+  current_period_end?: string;
 }
 
 interface UsageCheck {
