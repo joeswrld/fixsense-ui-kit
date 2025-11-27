@@ -4,18 +4,18 @@ import { Card, CardContent } from "@/components/ui/card";
 const features = [
   {
     icon: Camera,
-    title: "Photo Analysis",
-    description: "Snap a picture of the problem and get instant diagnosis from our AI"
+    title: "AI Diagnostics ",
+    description: "Upload a video, audio, or photo and get instant repair diagnosis and cost estimate. "
   },
   {
     icon: Video,
-    title: "Video Diagnostics",
-    description: "Upload videos of strange noises or behaviors for detailed analysis"
+    title: "AI Predictive Maintenance Alerts",
+    description: "AI-powered failure predictions and recommendations"
   },
   {
     icon: Mic,
-    title: "Audio Detection",
-    description: "Record unusual sounds and identify the issue before it gets worse"
+    title: "Service Vendor Directory",
+    description: "Manage your trusted service providers"
   },
   {
     icon: DollarSign,

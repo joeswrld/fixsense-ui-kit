@@ -34,11 +34,10 @@ const plans = [
       "Priority support",
     ],
     cta: "Get Started",
-    popular: true
   },
   {
     name: "Host Business",
-    price: "₦8,800",
+    price: "₦14,300",
     period: "/month",
     features: [
       "60 photo diagnostics per month",
@@ -46,11 +45,16 @@ const plans = [
       "5 video diagnostics per month",
       "150 text diagnostics per month",
       "30 properties",
+      "AI Predictive Maintenance Alerts",
       "Advanced analytics",
       "Dedicated support",
+      "Warranty Information",
+      "Service Vendor Directory",
+      "Maintenance History",
+
     ],
     cta: "Get Started",
-    popular: false
+    popular: true
   }
 ];
 

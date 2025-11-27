@@ -22,6 +22,7 @@ const plans = [
       "3 text diagnostics per month",
       "1 property",
       "Basic support",
+      "Full history",
     ],
   },
   {
@@ -37,11 +38,11 @@ const plans = [
       "Full history",
       "Priority support",
     ],
-    popular: true,
+    
   },
   {
     name: "Host Business",
-    price: 880000, // ₦8,800 in kobo
+    price: 1430000, // ₦14,300 in kobo
     tier: "business",
     features: [
       "60 photo diagnostics per month",
@@ -49,9 +50,14 @@ const plans = [
       "5 video diagnostics per month",
       "150 text diagnostics per month",
       "30 properties",
+      "AI Predictive Maintenance Alerts",
       "Advanced analytics",
       "Dedicated support",
+      "Warranty Information",
+      "Service Vendor Directory",
+      "Maintenance History",
     ],
+    popular: true,
   },
 ];
 interface Transaction {
