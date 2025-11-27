@@ -36,7 +36,7 @@ interface YouTubeVideo {
 }
 
 // ============================================================
-// PRICING CONFIGURATION
+// COUNTRY-NATIVE PRICING CONFIGURATION
 // ============================================================
 
 const REPAIR_COMPLEXITY = {
@@ -47,83 +47,305 @@ const REPAIR_COMPLEXITY = {
 
 type RepairComplexity = typeof REPAIR_COMPLEXITY[keyof typeof REPAIR_COMPLEXITY];
 
-const BASE_REPAIR_COSTS: Record<RepairComplexity, { min: number; max: number }> = {
-  [REPAIR_COMPLEXITY.MINOR]: { min: 20, max: 50 },
-  [REPAIR_COMPLEXITY.MODERATE]: { min: 60, max: 150 },
-  [REPAIR_COMPLEXITY.MAJOR]: { min: 180, max: 400 }
-};
-
-interface CountryData {
-  multiplier: number;
+interface CountryPricing {
   currency: string;
+  symbol: string;
   name: string;
-  exchangeRate: number;
+  prices: {
+    minor: { min: number; max: number };
+    moderate: { min: number; max: number };
+    major: { min: number; max: number };
+  };
 }
 
-const COUNTRY_MULTIPLIERS: Record<string, CountryData> = {
-  NG: { multiplier: 0.35, currency: '₦', name: 'Nigeria', exchangeRate: 1650 },
-  GH: { multiplier: 0.45, currency: '₵', name: 'Ghana', exchangeRate: 15.5 },
-  KE: { multiplier: 0.45, currency: 'KSh', name: 'Kenya', exchangeRate: 155 },
-  ZA: { multiplier: 0.65, currency: 'R', name: 'South Africa', exchangeRate: 19 },
-  GB: { multiplier: 1.2, currency: '£', name: 'United Kingdom', exchangeRate: 0.79 },
-  DE: { multiplier: 1.2, currency: '€', name: 'Germany', exchangeRate: 0.92 },
-  FR: { multiplier: 1.2, currency: '€', name: 'France', exchangeRate: 0.92 },
-  US: { multiplier: 1.4, currency: '$', name: 'United States', exchangeRate: 1 },
-  CA: { multiplier: 1.4, currency: 'C$', name: 'Canada', exchangeRate: 1.35 }
+// Country-native pricing: Real local market rates in local currencies
+const COUNTRY_NATIVE_PRICING: Record<string, CountryPricing> = {
+  // West Africa
+  NG: {
+    currency: 'NGN',
+    symbol: '₦',
+    name: 'Nigeria',
+    prices: {
+      minor: { min: 5000, max: 15000 },
+      moderate: { min: 18000, max: 45000 },
+      major: { min: 60000, max: 150000 }
+    }
+  },
+  GH: {
+    currency: 'GHS',
+    symbol: '₵',
+    name: 'Ghana',
+    prices: {
+      minor: { min: 120, max: 300 },
+      moderate: { min: 350, max: 900 },
+      major: { min: 1200, max: 3000 }
+    }
+  },
+  
+  // East Africa
+  KE: {
+    currency: 'KES',
+    symbol: 'KSh',
+    name: 'Kenya',
+    prices: {
+      minor: { min: 2000, max: 6000 },
+      moderate: { min: 7000, max: 18000 },
+      major: { min: 25000, max: 60000 }
+    }
+  },
+  TZ: {
+    currency: 'TZS',
+    symbol: 'TSh',
+    name: 'Tanzania',
+    prices: {
+      minor: { min: 50000, max: 150000 },
+      moderate: { min: 180000, max: 450000 },
+      major: { min: 600000, max: 1500000 }
+    }
+  },
+  UG: {
+    currency: 'UGX',
+    symbol: 'USh',
+    name: 'Uganda',
+    prices: {
+      minor: { min: 80000, max: 200000 },
+      moderate: { min: 250000, max: 600000 },
+      major: { min: 800000, max: 2000000 }
+    }
+  },
+  
+  // Southern Africa
+  ZA: {
+    currency: 'ZAR',
+    symbol: 'R',
+    name: 'South Africa',
+    prices: {
+      minor: { min: 350, max: 800 },
+      moderate: { min: 1000, max: 2500 },
+      major: { min: 3500, max: 8000 }
+    }
+  },
+  
+  // North America
+  US: {
+    currency: 'USD',
+    symbol: '$',
+    name: 'United States',
+    prices: {
+      minor: { min: 90, max: 180 },
+      moderate: { min: 250, max: 600 },
+      major: { min: 700, max: 1500 }
+    }
+  },
+  CA: {
+    currency: 'CAD',
+    symbol: 'C$',
+    name: 'Canada',
+    prices: {
+      minor: { min: 110, max: 220 },
+      moderate: { min: 300, max: 750 },
+      major: { min: 900, max: 1900 }
+    }
+  },
+  
+  // Europe
+  GB: {
+    currency: 'GBP',
+    symbol: '£',
+    name: 'United Kingdom',
+    prices: {
+      minor: { min: 60, max: 120 },
+      moderate: { min: 150, max: 350 },
+      major: { min: 400, max: 900 }
+    }
+  },
+  DE: {
+    currency: 'EUR',
+    symbol: '€',
+    name: 'Germany',
+    prices: {
+      minor: { min: 70, max: 140 },
+      moderate: { min: 180, max: 420 },
+      major: { min: 500, max: 1100 }
+    }
+  },
+  FR: {
+    currency: 'EUR',
+    symbol: '€',
+    name: 'France',
+    prices: {
+      minor: { min: 70, max: 140 },
+      moderate: { min: 180, max: 420 },
+      major: { min: 500, max: 1100 }
+    }
+  },
+  IT: {
+    currency: 'EUR',
+    symbol: '€',
+    name: 'Italy',
+    prices: {
+      minor: { min: 65, max: 130 },
+      moderate: { min: 170, max: 400 },
+      major: { min: 480, max: 1000 }
+    }
+  },
+  ES: {
+    currency: 'EUR',
+    symbol: '€',
+    name: 'Spain',
+    prices: {
+      minor: { min: 60, max: 120 },
+      moderate: { min: 160, max: 380 },
+      major: { min: 450, max: 950 }
+    }
+  },
+  
+  // Asia
+  IN: {
+    currency: 'INR',
+    symbol: '₹',
+    name: 'India',
+    prices: {
+      minor: { min: 500, max: 1500 },
+      moderate: { min: 2000, max: 5000 },
+      major: { min: 7000, max: 15000 }
+    }
+  },
+  PK: {
+    currency: 'PKR',
+    symbol: 'Rs',
+    name: 'Pakistan',
+    prices: {
+      minor: { min: 2000, max: 5000 },
+      moderate: { min: 6000, max: 15000 },
+      major: { min: 20000, max: 45000 }
+    }
+  },
+  BD: {
+    currency: 'BDT',
+    symbol: '৳',
+    name: 'Bangladesh',
+    prices: {
+      minor: { min: 800, max: 2000 },
+      moderate: { min: 2500, max: 6000 },
+      major: { min: 8000, max: 18000 }
+    }
+  }
 };
 
-const DEFAULT_PRICING: CountryData = {
-  multiplier: 1.0,
-  currency: '$',
-  name: 'Global Average',
-  exchangeRate: 1
+// Regional fallback pricing (when specific country not found)
+const REGIONAL_FALLBACKS: Record<string, CountryPricing> = {
+  'west-africa': {
+    currency: 'USD',
+    symbol: '$',
+    name: 'West Africa (Regional Average)',
+    prices: {
+      minor: { min: 8, max: 25 },
+      moderate: { min: 30, max: 75 },
+      major: { min: 100, max: 250 }
+    }
+  },
+  'east-africa': {
+    currency: 'USD',
+    symbol: '$',
+    name: 'East Africa (Regional Average)',
+    prices: {
+      minor: { min: 12, max: 35 },
+      moderate: { min: 40, max: 100 },
+      major: { min: 140, max: 350 }
+    }
+  },
+  'europe': {
+    currency: 'EUR',
+    symbol: '€',
+    name: 'Europe (Regional Average)',
+    prices: {
+      minor: { min: 65, max: 130 },
+      moderate: { min: 170, max: 400 },
+      major: { min: 480, max: 1000 }
+    }
+  },
+  'global': {
+    currency: 'USD',
+    symbol: '$',
+    name: 'Global Average',
+    prices: {
+      minor: { min: 50, max: 100 },
+      moderate: { min: 120, max: 300 },
+      major: { min: 400, max: 900 }
+    }
+  }
 };
 
 // ============================================================
 // PRICING UTILITIES
 // ============================================================
 
-const roundToMarketPrice = (value: number, countryCode: string): number => {
-  if (['US', 'GB', 'DE', 'FR', 'CA'].includes(countryCode)) {
+const getCountryPricing = (countryCode: string): { pricing: CountryPricing; isRegional: boolean } => {
+  // Direct country match
+  if (COUNTRY_NATIVE_PRICING[countryCode]) {
+    return { pricing: COUNTRY_NATIVE_PRICING[countryCode], isRegional: false };
+  }
+  
+  // Regional fallbacks based on country code patterns
+  const westAfricaCodes = ['BJ', 'BF', 'CI', 'GM', 'GW', 'LR', 'ML', 'NE', 'SN', 'SL', 'TG'];
+  const eastAfricaCodes = ['ET', 'RW', 'SO', 'SS', 'SD'];
+  const europeCodes = ['AT', 'BE', 'DK', 'FI', 'GR', 'IE', 'NL', 'NO', 'PL', 'PT', 'SE', 'CH'];
+  
+  if (westAfricaCodes.includes(countryCode)) {
+    return { pricing: REGIONAL_FALLBACKS['west-africa'], isRegional: true };
+  }
+  if (eastAfricaCodes.includes(countryCode)) {
+    return { pricing: REGIONAL_FALLBACKS['east-africa'], isRegional: true };
+  }
+  if (europeCodes.includes(countryCode)) {
+    return { pricing: REGIONAL_FALLBACKS['europe'], isRegional: true };
+  }
+  
+  // Global fallback
+  return { pricing: REGIONAL_FALLBACKS['global'], isRegional: true };
+};
+
+const roundToMarketPrice = (value: number, currency: string): number => {
+  // High-value currencies: round to nearest 5 or 10
+  if (['USD', 'EUR', 'GBP', 'CAD'].includes(currency)) {
     if (value < 100) return Math.round(value / 5) * 5;
     return Math.round(value / 10) * 10;
   }
   
-  if (countryCode === 'ZA') {
+  // Medium-value currencies: round to nearest 50
+  if (['ZAR'].includes(currency)) {
     return Math.round(value / 50) * 50;
   }
   
+  // Lower-value currencies: round to nearest 100, 1000, etc
+  if (value > 100000) return Math.round(value / 10000) * 10000;
   if (value > 10000) return Math.round(value / 1000) * 1000;
   if (value > 1000) return Math.round(value / 100) * 100;
   return Math.round(value / 50) * 50;
 };
 
-const formatCurrency = (value: number, countryCode: string): string => {
-  if (['US', 'GB', 'CA'].includes(countryCode)) {
+const formatCurrency = (value: number, currency: string): string => {
+  if (['USD', 'GBP', 'CAD'].includes(currency)) {
     return value.toLocaleString('en-US', { maximumFractionDigits: 0 });
   }
-  if (['DE', 'FR'].includes(countryCode)) {
+  if (['EUR'].includes(currency)) {
     return value.toLocaleString('de-DE', { maximumFractionDigits: 0 });
   }
   return value.toLocaleString('en-US', { maximumFractionDigits: 0 });
 };
 
 const calculateRepairCost = (complexity: RepairComplexity, countryCode: string) => {
-  const baseCost = BASE_REPAIR_COSTS[complexity] || BASE_REPAIR_COSTS[REPAIR_COMPLEXITY.MODERATE];
-  const countryData = COUNTRY_MULTIPLIERS[countryCode] || DEFAULT_PRICING;
-  
-  const adjustedMinUSD = baseCost.min * countryData.multiplier;
-  const adjustedMaxUSD = baseCost.max * countryData.multiplier;
-  
-  const minLocal = adjustedMinUSD * countryData.exchangeRate;
-  const maxLocal = adjustedMaxUSD * countryData.exchangeRate;
+  const { pricing, isRegional } = getCountryPricing(countryCode);
+  const priceRange = pricing.prices[complexity];
   
   return {
-    min: roundToMarketPrice(minLocal, countryCode),
-    max: roundToMarketPrice(maxLocal, countryCode),
-    currency: countryData.currency,
-    countryName: countryData.name,
-    isDefaultPricing: !COUNTRY_MULTIPLIERS[countryCode]
+    min: roundToMarketPrice(priceRange.min, pricing.currency),
+    max: roundToMarketPrice(priceRange.max, pricing.currency),
+    currency: pricing.currency,
+    symbol: pricing.symbol,
+    countryName: pricing.name,
+    isRegionalFallback: isRegional
   };
 };
 
@@ -167,7 +389,7 @@ const RepairCostEstimate = ({ diagnostic, userCountry }: { diagnostic: Diagnosti
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <DollarSign className="w-5 h-5" />
-            Estimated Repair Cost (Local Market)
+            Estimated Repair Cost
           </CardTitle>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <MapPin className="w-4 h-4" />
@@ -186,19 +408,19 @@ const RepairCostEstimate = ({ diagnostic, userCountry }: { diagnostic: Diagnosti
 
         {/* Cost Range */}
         <div className="text-3xl font-bold text-primary mb-4">
-          {costData.currency}{formatCurrency(costData.min, userCountry)} - {costData.currency}{formatCurrency(costData.max, userCountry)}
+          {costData.symbol}{formatCurrency(costData.min, costData.currency)} - {costData.symbol}{formatCurrency(costData.max, costData.currency)}
         </div>
         
         <p className="text-sm text-muted-foreground">
-          Based on typical technician pricing in {costData.countryName}
+          Based on average technician pricing in {costData.countryName}
         </p>
 
-        {/* Warning for default pricing */}
-        {costData.isDefaultPricing && (
-          <Alert className="border-yellow-500 bg-yellow-50">
-            <Info className="h-4 w-4 text-yellow-600" />
-            <AlertDescription className="text-yellow-800">
-              Pricing data for your specific country is not available. Showing global average estimates.
+        {/* Regional fallback warning */}
+        {costData.isRegionalFallback && (
+          <Alert className="border-blue-500 bg-blue-50">
+            <Info className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-800">
+              Showing regional average pricing. Local rates may vary.
             </AlertDescription>
           </Alert>
         )}
@@ -209,12 +431,12 @@ const RepairCostEstimate = ({ diagnostic, userCountry }: { diagnostic: Diagnosti
           <AlertDescription className="text-blue-800 space-y-2">
             <p className="font-medium">💡 Pricing considerations:</p>
             <ul className="text-sm space-y-1 ml-4 list-disc">
-              <li>Repair complexity level: {complexity}</li>
-              <li>Local market labor rates</li>
-              <li>Regional cost variations</li>
+              <li>Repair complexity: {complexityInfo.label}</li>
+              <li>Typical local technician rates</li>
+              <li>Parts availability in your area</li>
             </ul>
             <p className="text-xs mt-2 border-t border-blue-200 pt-2">
-              Actual costs may vary by technician and location. Always get multiple quotes.
+              Actual costs may vary by technician and location. Always get multiple quotes before proceeding.
             </p>
           </AlertDescription>
         </Alert>
@@ -236,7 +458,7 @@ const Result = () => {
   const [exporting, setExporting] = useState(false);
   const [youtubeVideos, setYoutubeVideos] = useState<YouTubeVideo[]>([]);
   const [loadingVideos, setLoadingVideos] = useState(false);
-  const [userCountry, setUserCountry] = useState<string>('NG'); // Default to Nigeria
+  const [userCountry, setUserCountry] = useState<string>('NG');
 
   useEffect(() => {
     fetchDiagnostic();
@@ -303,7 +525,6 @@ const Result = () => {
       
       const searchQuery = `how to fix ${applianceType} ${mainCause} repair tutorial`;
       
-      // Note: YouTube API key should be configured in environment
       const API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
       
       if (!API_KEY) {
@@ -439,7 +660,7 @@ const Result = () => {
             </CardContent>
           </Card>
 
-          {/* NEW: Country-Aware Repair Cost */}
+          {/* Country-Native Repair Cost */}
           <RepairCostEstimate diagnostic={diagnostic} userCountry={userCountry} />
 
           {/* YouTube Video Recommendations */}
