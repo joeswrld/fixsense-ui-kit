@@ -118,6 +118,7 @@ const Auth = () => {
                   <Input
                     id="signin-password"
                     type="password"
+                    placeholder="********"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -158,6 +159,7 @@ const Auth = () => {
                   <Input
                     id="signup-password"
                     type="password"
+                    placeholder="******"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
