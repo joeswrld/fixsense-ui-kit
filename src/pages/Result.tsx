@@ -4,13 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Wrench, ArrowLeft, FileText, AlertTriangle, CheckCircle2, DollarSign, Loader2, Download, PlayCircle } from "lucide-react";
+import { Wrench, ArrowLeft, FileText, AlertTriangle, CheckCircle2, DollarSign, Loader2, Download, PlayCircle, Info, MapPin, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { exportDiagnosticToPDF } from "@/lib/pdfExport";
 import { useToast } from "@/hooks/use-toast";
 import { AppHeader } from "@/components/AppHeader";
-import { formatPriceRange } from "@/lib/currencyUtils";
 
 interface Diagnostic {
   id: string;
@@ -36,6 +35,344 @@ interface YouTubeVideo {
   duration: string;
 }
 
+// ============================================================
+// COUNTRY-NATIVE PRICING CONFIGURATION
+// ============================================================
+
+const REPAIR_COMPLEXITY = {
+  MINOR: 'minor',
+  MODERATE: 'moderate',
+  MAJOR: 'major'
+} as const;
+
+type RepairComplexity = typeof REPAIR_COMPLEXITY[keyof typeof REPAIR_COMPLEXITY];
+
+interface CountryPricing {
+  currency: string;
+  symbol: string;
+  name: string;
+  prices: {
+    minor: { min: number; max: number };
+    moderate: { min: number; max: number };
+    major: { min: number; max: number };
+  };
+}
+
+// Country-native pricing: Real local market rates in local currencies
+const COUNTRY_PRICING: Record<string, any> = {
+  // 🇳🇬 Nigeria (Baseline market)
+  NG: {
+    currency: 'NGN',
+    laborMultiplier: 1,
+    minRepair: 3000,
+    maxRepair: 40000
+  },
+
+  // 🇬🇭 Ghana
+  GH: {
+    currency: 'GHS',
+    laborMultiplier: 1.1,
+    minRepair: 200,
+    maxRepair: 3000
+  },
+
+  // 🇰🇪 Kenya
+  KE: {
+    currency: 'KES',
+    laborMultiplier: 1.2,
+    minRepair: 1500,
+    maxRepair: 25000
+  },
+
+  // 🇿🇦 South Africa
+  ZA: {
+    currency: 'ZAR',
+    laborMultiplier: 1.8,
+    minRepair: 600,
+    maxRepair: 12000
+  },
+
+  // 🇮🇳 India
+  IN: {
+    currency: 'INR',
+    laborMultiplier: 0.9,
+    minRepair: 500,
+    maxRepair: 8000
+  },
+
+  // 🇦🇪 UAE
+  AE: {
+    currency: 'AED',
+    laborMultiplier: 2.8,
+    minRepair: 150,
+    maxRepair: 1800
+  },
+
+  // 🇨🇦 Canada
+  CA: {
+    currency: 'CAD',
+    laborMultiplier: 2.8,
+    minRepair: 90,
+    maxRepair: 900
+  },
+
+  // 🇺🇸 United States
+  US: {
+    currency: 'USD',
+    laborMultiplier: 3,
+    minRepair: 80,
+    maxRepair: 800
+  },
+
+  // 🇬🇧 United Kingdom
+  UK: {
+    currency: 'GBP',
+    laborMultiplier: 2.5,
+    minRepair: 70,
+    maxRepair: 600
+  },
+
+  // 🇩🇪 Germany
+  DE: {
+    currency: 'EUR',
+    laborMultiplier: 2.7,
+    minRepair: 90,
+    maxRepair: 750
+  },
+
+  // 🇫🇷 France
+  FR: {
+    currency: 'EUR',
+    laborMultiplier: 2.6,
+    minRepair: 85,
+    maxRepair: 700
+  },
+
+  // 🇦🇺 Australia
+  AU: {
+    currency: 'AUD',
+    laborMultiplier: 2.9,
+    minRepair: 100,
+    maxRepair: 1000
+  }
+};
+
+// Regional fallback pricing (when specific country not found)
+const REGIONAL_FALLBACKS: Record<string, CountryPricing> = {
+  'west-africa': {
+    currency: 'USD',
+    symbol: '$',
+    name: 'West Africa (Regional Average)',
+    prices: {
+      minor: { min: 8, max: 25 },
+      moderate: { min: 30, max: 75 },
+      major: { min: 80, max: 250 }
+    }
+  },
+  'east-africa': {
+    currency: 'USD',
+    symbol: '$',
+    name: 'East Africa (Regional Average)',
+    prices: {
+      minor: { min: 12, max: 35 },
+      moderate: { min: 40, max: 100 },
+      major: { min: 140, max: 350 }
+    }
+  },
+  'europe': {
+    currency: 'EUR',
+    symbol: '€',
+    name: 'Europe (Regional Average)',
+    prices: {
+      minor: { min: 65, max: 130 },
+      moderate: { min: 170, max: 400 },
+      major: { min: 480, max: 1000 }
+    }
+  },
+  'global': {
+    currency: 'USD',
+    symbol: '$',
+    name: 'Global Average',
+    prices: {
+      minor: { min: 50, max: 100 },
+      moderate: { min: 120, max: 300 },
+      major: { min: 400, max: 900 }
+    }
+  }
+};
+
+// ============================================================
+// PRICING UTILITIES
+// ============================================================
+
+const getCountryPricing = (countryCode: string): { pricing: CountryPricing; isRegional: boolean } => {
+  // Direct country match
+  if (COUNTRY_NATIVE_PRICING[countryCode]) {
+    return { pricing: COUNTRY_NATIVE_PRICING[countryCode], isRegional: false };
+  }
+  
+  // Regional fallbacks based on country code patterns
+  const westAfricaCodes = ['BJ', 'BF', 'CI', 'GM', 'GW', 'LR', 'ML', 'NE', 'SN', 'SL', 'TG'];
+  const eastAfricaCodes = ['ET', 'RW', 'SO', 'SS', 'SD'];
+  const europeCodes = ['AT', 'BE', 'DK', 'FI', 'GR', 'IE', 'NL', 'NO', 'PL', 'PT', 'SE', 'CH'];
+  
+  if (westAfricaCodes.includes(countryCode)) {
+    return { pricing: REGIONAL_FALLBACKS['west-africa'], isRegional: true };
+  }
+  if (eastAfricaCodes.includes(countryCode)) {
+    return { pricing: REGIONAL_FALLBACKS['east-africa'], isRegional: true };
+  }
+  if (europeCodes.includes(countryCode)) {
+    return { pricing: REGIONAL_FALLBACKS['europe'], isRegional: true };
+  }
+  
+  // Global fallback
+  return { pricing: REGIONAL_FALLBACKS['global'], isRegional: true };
+};
+
+const roundToMarketPrice = (value: number, currency: string): number => {
+  // High-value currencies: round to nearest 5 or 10
+  if (['USD', 'EUR', 'GBP', 'CAD'].includes(currency)) {
+    if (value < 100) return Math.round(value / 5) * 5;
+    return Math.round(value / 10) * 10;
+  }
+  
+  // Medium-value currencies: round to nearest 50
+  if (['ZAR'].includes(currency)) {
+    return Math.round(value / 50) * 50;
+  }
+  
+  // Lower-value currencies: round to nearest 100, 1000, etc
+  if (value > 100000) return Math.round(value / 10000) * 10000;
+  if (value > 10000) return Math.round(value / 1000) * 1000;
+  if (value > 1000) return Math.round(value / 100) * 100;
+  return Math.round(value / 50) * 50;
+};
+
+const formatCurrency = (value: number, currency: string): string => {
+  if (['USD', 'GBP', 'CAD'].includes(currency)) {
+    return value.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  }
+  if (['EUR'].includes(currency)) {
+    return value.toLocaleString('de-DE', { maximumFractionDigits: 0 });
+  }
+  return value.toLocaleString('en-US', { maximumFractionDigits: 0 });
+};
+
+const calculateRepairCost = (complexity: RepairComplexity, countryCode: string) => {
+  const { pricing, isRegional } = getCountryPricing(countryCode);
+  const priceRange = pricing.prices[complexity];
+  
+  return {
+    min: roundToMarketPrice(priceRange.min, pricing.currency),
+    max: roundToMarketPrice(priceRange.max, pricing.currency),
+    currency: pricing.currency,
+    symbol: pricing.symbol,
+    countryName: pricing.name,
+    isRegionalFallback: isRegional
+  };
+};
+
+const determineComplexity = (diagnostic: Diagnostic): RepairComplexity => {
+  const summary = (diagnostic.diagnosis_summary || '').toLowerCase();
+  const causes = (diagnostic.probable_causes || []).join(' ').toLowerCase();
+  const instructions = (diagnostic.fix_instructions || '').toLowerCase();
+  
+  const allText = `${summary} ${causes} ${instructions}`;
+  
+  const minorKeywords = ['clean', 'reset', 'loose', 'tighten', 'adjust', 'reconnect', 'cable', 'filter', 'dust'];
+  const majorKeywords = ['replace', 'component', 'motor', 'compressor', 'circuit', 'board', 'electrical', 'mechanical', 'wiring'];
+  
+  const minorCount = minorKeywords.filter(kw => allText.includes(kw)).length;
+  const majorCount = majorKeywords.filter(kw => allText.includes(kw)).length;
+  
+  if (majorCount >= 2) return REPAIR_COMPLEXITY.MAJOR;
+  if (minorCount >= 2 && majorCount === 0) return REPAIR_COMPLEXITY.MINOR;
+  return REPAIR_COMPLEXITY.MODERATE;
+};
+
+// ============================================================
+// REPAIR COST COMPONENT
+// ============================================================
+
+const RepairCostEstimate = ({ diagnostic, userCountry }: { diagnostic: Diagnostic; userCountry: string }) => {
+  const complexity = determineComplexity(diagnostic);
+  const costData = calculateRepairCost(complexity, userCountry);
+
+  const complexityLabels = {
+    minor: { label: 'Minor Repair', color: 'text-green-600', bg: 'bg-green-50' },
+    moderate: { label: 'Moderate Repair', color: 'text-yellow-600', bg: 'bg-yellow-50' },
+    major: { label: 'Major Repair', color: 'text-red-600', bg: 'bg-red-50' }
+  };
+
+  const complexityInfo = complexityLabels[complexity];
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <DollarSign className="w-5 h-5" />
+            Estimated Repair Cost
+          </CardTitle>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <MapPin className="w-4 h-4" />
+            <span>{costData.countryName}</span>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Complexity Badge */}
+        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full ${complexityInfo.bg}`}>
+          <TrendingUp className={`w-4 h-4 ${complexityInfo.color}`} />
+          <span className={`text-sm font-medium ${complexityInfo.color}`}>
+            {complexityInfo.label}
+          </span>
+        </div>
+
+        {/* Cost Range */}
+        <div className="text-3xl font-bold text-primary mb-4">
+          {costData.symbol}{formatCurrency(costData.min, costData.currency)} - {costData.symbol}{formatCurrency(costData.max, costData.currency)}
+        </div>
+        
+        <p className="text-sm text-muted-foreground">
+          Based on average technician pricing in {costData.countryName}
+        </p>
+
+        {/* Regional fallback warning */}
+        {costData.isRegionalFallback && (
+          <Alert className="border-blue-500 bg-blue-50">
+            <Info className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-800">
+              Showing regional average pricing. Local rates may vary.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Transparency Note */}
+        <Alert className="border-blue-500 bg-blue-50">
+          <Info className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-blue-800 space-y-2">
+            <p className="font-medium">💡 Pricing considerations:</p>
+            <ul className="text-sm space-y-1 ml-4 list-disc">
+              <li>Repair complexity: {complexityInfo.label}</li>
+              <li>Typical local technician rates</li>
+              <li>Parts availability in your area</li>
+            </ul>
+            <p className="text-xs mt-2 border-t border-blue-200 pt-2">
+              Actual costs may vary by technician and location. Always get multiple quotes before proceeding.
+            </p>
+          </AlertDescription>
+        </Alert>
+      </CardContent>
+    </Card>
+  );
+};
+
+// ============================================================
+// MAIN RESULT COMPONENT
+// ============================================================
+
 const Result = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -45,11 +382,31 @@ const Result = () => {
   const [exporting, setExporting] = useState(false);
   const [youtubeVideos, setYoutubeVideos] = useState<YouTubeVideo[]>([]);
   const [loadingVideos, setLoadingVideos] = useState(false);
-  const [userCurrency, setUserCurrency] = useState<string>("NGN");
+  const [userCountry, setUserCountry] = useState<string>('NG');
 
   useEffect(() => {
     fetchDiagnostic();
+    fetchUserCountry();
   }, [id]);
+
+  const fetchUserCountry = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("country")
+        .eq("id", user.id)
+        .single();
+
+      if (profile?.country) {
+        setUserCountry(profile.country);
+      }
+    } catch (error) {
+      console.error("Error fetching user country:", error);
+    }
+  };
 
   const fetchDiagnostic = async () => {
     try {
@@ -57,17 +414,6 @@ const Result = () => {
       if (!user) {
         navigate("/auth");
         return;
-      }
-
-      // Fetch user's currency preference
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("currency")
-        .eq("id", user.id)
-        .single();
-
-      if (!profileError && profileData?.currency) {
-        setUserCurrency(profileData.currency);
       }
 
       const { data, error } = await supabase
@@ -84,7 +430,6 @@ const Result = () => {
 
       setDiagnostic(data);
       
-      // Fetch YouTube videos based on the diagnosis
       if (data) {
         fetchYouTubeVideos(data);
       }
@@ -99,15 +444,18 @@ const Result = () => {
   const fetchYouTubeVideos = async (diagnosticData: Diagnostic) => {
     setLoadingVideos(true);
     try {
-      // Create a search query based on the diagnostic data
       const applianceType = diagnosticData.appliances?.type || "appliance";
       const mainCause = diagnosticData.probable_causes[0] || "repair";
       
-      // Build search query
       const searchQuery = `how to fix ${applianceType} ${mainCause} repair tutorial`;
       
-      // YouTube API endpoint (you'll need to add your API key)
-      const API_KEY = "YOUR_YOUTUBE_API_KEY"; // Store this in environment variables
+      const API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
+      
+      if (!API_KEY) {
+        console.log("YouTube API key not configured");
+        return;
+      }
+      
       const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(searchQuery)}&type=video&maxResults=3&key=${API_KEY}`;
 
       const response = await fetch(url);
@@ -118,19 +466,17 @@ const Result = () => {
 
       const data = await response.json();
       
-      // Transform the response to our format
       const videos: YouTubeVideo[] = data.items.map((item: any) => ({
         id: item.id.videoId,
         title: item.snippet.title,
         thumbnail: item.snippet.thumbnails.medium.url,
         channelTitle: item.snippet.channelTitle,
-        duration: "" // We'll keep this empty or you can fetch it with an additional API call
+        duration: ""
       }));
 
       setYoutubeVideos(videos);
     } catch (error) {
       console.error("Error fetching YouTube videos:", error);
-      // Fail silently - the page will still work without videos
     } finally {
       setLoadingVideos(false);
     }
@@ -238,6 +584,9 @@ const Result = () => {
             </CardContent>
           </Card>
 
+          {/* Country-Native Repair Cost */}
+          <RepairCostEstimate diagnostic={diagnostic} userCountry={userCountry} />
+
           {/* YouTube Video Recommendations */}
           {youtubeVideos.length > 0 && (
             <Card>
@@ -291,29 +640,6 @@ const Result = () => {
               </CardContent>
             </Card>
           )}
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <DollarSign className="w-5 h-5" />
-                Estimated Repair Cost
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-primary mb-4">
-                {diagnostic.estimated_cost_min && diagnostic.estimated_cost_max
-                  ? formatPriceRange(
-                      diagnostic.estimated_cost_min,
-                      diagnostic.estimated_cost_max,
-                      userCurrency
-                    )
-                  : "Estimate unavailable"}
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Prices may vary by location and technician. Always get multiple quotes.
-              </p>
-            </CardContent>
-          </Card>
 
           {diagnostic.scam_alerts && diagnostic.scam_alerts.length > 0 && (
             <Card className="border-destructive/50">
