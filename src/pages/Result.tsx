@@ -59,101 +59,177 @@ interface CountryPricing {
 }
 
 // Country-native pricing: Real local market rates in local currencies
-const COUNTRY_PRICING: Record<string, any> = {
-  // 🇳🇬 Nigeria (Baseline market)
+const COUNTRY_NATIVE_PRICING: Record<string, CountryPricing> = {
+  // West Africa
   NG: {
     currency: 'NGN',
-    laborMultiplier: 1,
-    minRepair: 3000,
-    maxRepair: 40000
+    symbol: '₦',
+    name: 'Nigeria',
+    prices: {
+      minor: { min: 500, max: 15000 },
+      moderate: { min: 1800, max: 45000 },
+      major: { min: 6000, max: 150000 }
+    }
   },
-
-  // 🇬🇭 Ghana
   GH: {
     currency: 'GHS',
-    laborMultiplier: 1.1,
-    minRepair: 200,
-    maxRepair: 3000
+    symbol: '₵',
+    name: 'Ghana',
+    prices: {
+      minor: { min: 120, max: 300 },
+      moderate: { min: 350, max: 900 },
+      major: { min: 1200, max: 3000 }
+    }
   },
-
-  // 🇰🇪 Kenya
+  
+  // East Africa
   KE: {
     currency: 'KES',
-    laborMultiplier: 1.2,
-    minRepair: 1500,
-    maxRepair: 25000
+    symbol: 'KSh',
+    name: 'Kenya',
+    prices: {
+      minor: { min: 2000, max: 6000 },
+      moderate: { min: 7000, max: 18000 },
+      major: { min: 25000, max: 60000 }
+    }
   },
-
-  // 🇿🇦 South Africa
+  TZ: {
+    currency: 'TZS',
+    symbol: 'TSh',
+    name: 'Tanzania',
+    prices: {
+      minor: { min: 50000, max: 150000 },
+      moderate: { min: 180000, max: 450000 },
+      major: { min: 600000, max: 1500000 }
+    }
+  },
+  UG: {
+    currency: 'UGX',
+    symbol: 'USh',
+    name: 'Uganda',
+    prices: {
+      minor: { min: 80000, max: 200000 },
+      moderate: { min: 250000, max: 600000 },
+      major: { min: 800000, max: 2000000 }
+    }
+  },
+  
+  // Southern Africa
   ZA: {
     currency: 'ZAR',
-    laborMultiplier: 1.8,
-    minRepair: 600,
-    maxRepair: 12000
+    symbol: 'R',
+    name: 'South Africa',
+    prices: {
+      minor: { min: 350, max: 800 },
+      moderate: { min: 1000, max: 2500 },
+      major: { min: 3500, max: 8000 }
+    }
   },
-
-  // 🇮🇳 India
-  IN: {
-    currency: 'INR',
-    laborMultiplier: 0.9,
-    minRepair: 500,
-    maxRepair: 8000
-  },
-
-  // 🇦🇪 UAE
-  AE: {
-    currency: 'AED',
-    laborMultiplier: 2.8,
-    minRepair: 150,
-    maxRepair: 1800
-  },
-
-  // 🇨🇦 Canada
-  CA: {
-    currency: 'CAD',
-    laborMultiplier: 2.8,
-    minRepair: 90,
-    maxRepair: 900
-  },
-
-  // 🇺🇸 United States
+  
+  // North America
   US: {
     currency: 'USD',
-    laborMultiplier: 3,
-    minRepair: 80,
-    maxRepair: 800
+    symbol: '$',
+    name: 'United States',
+    prices: {
+      minor: { min: 90, max: 180 },
+      moderate: { min: 250, max: 600 },
+      major: { min: 700, max: 1500 }
+    }
   },
-
-  // 🇬🇧 United Kingdom
-  UK: {
+  CA: {
+    currency: 'CAD',
+    symbol: 'C$',
+    name: 'Canada',
+    prices: {
+      minor: { min: 110, max: 220 },
+      moderate: { min: 300, max: 750 },
+      major: { min: 900, max: 1900 }
+    }
+  },
+  
+  // Europe
+  GB: {
     currency: 'GBP',
-    laborMultiplier: 2.5,
-    minRepair: 70,
-    maxRepair: 600
+    symbol: '£',
+    name: 'United Kingdom',
+    prices: {
+      minor: { min: 60, max: 120 },
+      moderate: { min: 150, max: 350 },
+      major: { min: 400, max: 900 }
+    }
   },
-
-  // 🇩🇪 Germany
   DE: {
     currency: 'EUR',
-    laborMultiplier: 2.7,
-    minRepair: 90,
-    maxRepair: 750
+    symbol: '€',
+    name: 'Germany',
+    prices: {
+      minor: { min: 70, max: 140 },
+      moderate: { min: 180, max: 420 },
+      major: { min: 500, max: 1100 }
+    }
   },
-
-  // 🇫🇷 France
   FR: {
     currency: 'EUR',
-    laborMultiplier: 2.6,
-    minRepair: 85,
-    maxRepair: 700
+    symbol: '€',
+    name: 'France',
+    prices: {
+      minor: { min: 70, max: 140 },
+      moderate: { min: 180, max: 420 },
+      major: { min: 500, max: 1100 }
+    }
   },
-
-  // 🇦🇺 Australia
-  AU: {
-    currency: 'AUD',
-    laborMultiplier: 2.9,
-    minRepair: 100,
-    maxRepair: 1000
+  IT: {
+    currency: 'EUR',
+    symbol: '€',
+    name: 'Italy',
+    prices: {
+      minor: { min: 65, max: 130 },
+      moderate: { min: 170, max: 400 },
+      major: { min: 480, max: 1000 }
+    }
+  },
+  ES: {
+    currency: 'EUR',
+    symbol: '€',
+    name: 'Spain',
+    prices: {
+      minor: { min: 60, max: 120 },
+      moderate: { min: 160, max: 380 },
+      major: { min: 450, max: 950 }
+    }
+  },
+  
+  // Asia
+  IN: {
+    currency: 'INR',
+    symbol: '₹',
+    name: 'India',
+    prices: {
+      minor: { min: 500, max: 1500 },
+      moderate: { min: 2000, max: 5000 },
+      major: { min: 7000, max: 15000 }
+    }
+  },
+  PK: {
+    currency: 'PKR',
+    symbol: 'Rs',
+    name: 'Pakistan',
+    prices: {
+      minor: { min: 2000, max: 5000 },
+      moderate: { min: 6000, max: 15000 },
+      major: { min: 20000, max: 45000 }
+    }
+  },
+  BD: {
+    currency: 'BDT',
+    symbol: '৳',
+    name: 'Bangladesh',
+    prices: {
+      minor: { min: 800, max: 2000 },
+      moderate: { min: 2500, max: 6000 },
+      major: { min: 8000, max: 18000 }
+    }
   }
 };
 
@@ -166,7 +242,7 @@ const REGIONAL_FALLBACKS: Record<string, CountryPricing> = {
     prices: {
       minor: { min: 8, max: 25 },
       moderate: { min: 30, max: 75 },
-      major: { min: 80, max: 250 }
+      major: { min: 100, max: 250 }
     }
   },
   'east-africa': {
