@@ -18,21 +18,25 @@ export const useCurrency = () => {
         .single();
 
       if (error || !data?.currency) return "USD";
-      return data.currency;
+      return data.currency as string;
     },
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
   const format = (amount: number, showSymbol: boolean = true) => {
-    return formatCurrency(amount, currencyCode || "USD", showSymbol);
+    const code = currencyCode || "USD";
+    return formatCurrency(amount, code, showSymbol);
   };
 
-  const symbol = getCurrencySymbol(currencyCode || "USD");
+  const getSymbol = () => {
+    const code = currencyCode || "USD";
+    return getCurrencySymbol(code);
+  };
 
   return {
     currencyCode: currencyCode || "USD",
     format,
-    symbol,
+    symbol: getSymbol(),
     isLoading,
   };
 };
