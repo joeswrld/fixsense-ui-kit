@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Wrench, ArrowLeft, FileText, AlertTriangle, CheckCircle2, DollarSign, Loader2, Download, PlayCircle } from "lucide-react";
+import { Wrench, ArrowLeft, FileText, AlertTriangle, CheckCircle2, DollarSign, Loader2, Download, PlayCircle, Info, MapPin, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { exportDiagnosticToPDF } from "@/lib/pdfExport";
@@ -35,6 +35,198 @@ interface YouTubeVideo {
   duration: string;
 }
 
+// ============================================================
+// PRICING CONFIGURATION
+// ============================================================
+
+const REPAIR_COMPLEXITY = {
+  MINOR: 'minor',
+  MODERATE: 'moderate',
+  MAJOR: 'major'
+} as const;
+
+type RepairComplexity = typeof REPAIR_COMPLEXITY[keyof typeof REPAIR_COMPLEXITY];
+
+const BASE_REPAIR_COSTS: Record<RepairComplexity, { min: number; max: number }> = {
+  [REPAIR_COMPLEXITY.MINOR]: { min: 20, max: 50 },
+  [REPAIR_COMPLEXITY.MODERATE]: { min: 60, max: 150 },
+  [REPAIR_COMPLEXITY.MAJOR]: { min: 180, max: 400 }
+};
+
+interface CountryData {
+  multiplier: number;
+  currency: string;
+  name: string;
+  exchangeRate: number;
+}
+
+const COUNTRY_MULTIPLIERS: Record<string, CountryData> = {
+  NG: { multiplier: 0.35, currency: '₦', name: 'Nigeria', exchangeRate: 1650 },
+  GH: { multiplier: 0.45, currency: '₵', name: 'Ghana', exchangeRate: 15.5 },
+  KE: { multiplier: 0.45, currency: 'KSh', name: 'Kenya', exchangeRate: 155 },
+  ZA: { multiplier: 0.65, currency: 'R', name: 'South Africa', exchangeRate: 19 },
+  GB: { multiplier: 1.2, currency: '£', name: 'United Kingdom', exchangeRate: 0.79 },
+  DE: { multiplier: 1.2, currency: '€', name: 'Germany', exchangeRate: 0.92 },
+  FR: { multiplier: 1.2, currency: '€', name: 'France', exchangeRate: 0.92 },
+  US: { multiplier: 1.4, currency: '$', name: 'United States', exchangeRate: 1 },
+  CA: { multiplier: 1.4, currency: 'C$', name: 'Canada', exchangeRate: 1.35 }
+};
+
+const DEFAULT_PRICING: CountryData = {
+  multiplier: 1.0,
+  currency: '$',
+  name: 'Global Average',
+  exchangeRate: 1
+};
+
+// ============================================================
+// PRICING UTILITIES
+// ============================================================
+
+const roundToMarketPrice = (value: number, countryCode: string): number => {
+  if (['US', 'GB', 'DE', 'FR', 'CA'].includes(countryCode)) {
+    if (value < 100) return Math.round(value / 5) * 5;
+    return Math.round(value / 10) * 10;
+  }
+  
+  if (countryCode === 'ZA') {
+    return Math.round(value / 50) * 50;
+  }
+  
+  if (value > 10000) return Math.round(value / 1000) * 1000;
+  if (value > 1000) return Math.round(value / 100) * 100;
+  return Math.round(value / 50) * 50;
+};
+
+const formatCurrency = (value: number, countryCode: string): string => {
+  if (['US', 'GB', 'CA'].includes(countryCode)) {
+    return value.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  }
+  if (['DE', 'FR'].includes(countryCode)) {
+    return value.toLocaleString('de-DE', { maximumFractionDigits: 0 });
+  }
+  return value.toLocaleString('en-US', { maximumFractionDigits: 0 });
+};
+
+const calculateRepairCost = (complexity: RepairComplexity, countryCode: string) => {
+  const baseCost = BASE_REPAIR_COSTS[complexity] || BASE_REPAIR_COSTS[REPAIR_COMPLEXITY.MODERATE];
+  const countryData = COUNTRY_MULTIPLIERS[countryCode] || DEFAULT_PRICING;
+  
+  const adjustedMinUSD = baseCost.min * countryData.multiplier;
+  const adjustedMaxUSD = baseCost.max * countryData.multiplier;
+  
+  const minLocal = adjustedMinUSD * countryData.exchangeRate;
+  const maxLocal = adjustedMaxUSD * countryData.exchangeRate;
+  
+  return {
+    min: roundToMarketPrice(minLocal, countryCode),
+    max: roundToMarketPrice(maxLocal, countryCode),
+    currency: countryData.currency,
+    countryName: countryData.name,
+    isDefaultPricing: !COUNTRY_MULTIPLIERS[countryCode]
+  };
+};
+
+const determineComplexity = (diagnostic: Diagnostic): RepairComplexity => {
+  const summary = (diagnostic.diagnosis_summary || '').toLowerCase();
+  const causes = (diagnostic.probable_causes || []).join(' ').toLowerCase();
+  const instructions = (diagnostic.fix_instructions || '').toLowerCase();
+  
+  const allText = `${summary} ${causes} ${instructions}`;
+  
+  const minorKeywords = ['clean', 'reset', 'loose', 'tighten', 'adjust', 'reconnect', 'cable', 'filter', 'dust'];
+  const majorKeywords = ['replace', 'component', 'motor', 'compressor', 'circuit', 'board', 'electrical', 'mechanical', 'wiring'];
+  
+  const minorCount = minorKeywords.filter(kw => allText.includes(kw)).length;
+  const majorCount = majorKeywords.filter(kw => allText.includes(kw)).length;
+  
+  if (majorCount >= 2) return REPAIR_COMPLEXITY.MAJOR;
+  if (minorCount >= 2 && majorCount === 0) return REPAIR_COMPLEXITY.MINOR;
+  return REPAIR_COMPLEXITY.MODERATE;
+};
+
+// ============================================================
+// REPAIR COST COMPONENT
+// ============================================================
+
+const RepairCostEstimate = ({ diagnostic, userCountry }: { diagnostic: Diagnostic; userCountry: string }) => {
+  const complexity = determineComplexity(diagnostic);
+  const costData = calculateRepairCost(complexity, userCountry);
+
+  const complexityLabels = {
+    minor: { label: 'Minor Repair', color: 'text-green-600', bg: 'bg-green-50' },
+    moderate: { label: 'Moderate Repair', color: 'text-yellow-600', bg: 'bg-yellow-50' },
+    major: { label: 'Major Repair', color: 'text-red-600', bg: 'bg-red-50' }
+  };
+
+  const complexityInfo = complexityLabels[complexity];
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <DollarSign className="w-5 h-5" />
+            Estimated Repair Cost (Local Market)
+          </CardTitle>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <MapPin className="w-4 h-4" />
+            <span>{costData.countryName}</span>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Complexity Badge */}
+        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full ${complexityInfo.bg}`}>
+          <TrendingUp className={`w-4 h-4 ${complexityInfo.color}`} />
+          <span className={`text-sm font-medium ${complexityInfo.color}`}>
+            {complexityInfo.label}
+          </span>
+        </div>
+
+        {/* Cost Range */}
+        <div className="text-3xl font-bold text-primary mb-4">
+          {costData.currency}{formatCurrency(costData.min, userCountry)} - {costData.currency}{formatCurrency(costData.max, userCountry)}
+        </div>
+        
+        <p className="text-sm text-muted-foreground">
+          Based on typical technician pricing in {costData.countryName}
+        </p>
+
+        {/* Warning for default pricing */}
+        {costData.isDefaultPricing && (
+          <Alert className="border-yellow-500 bg-yellow-50">
+            <Info className="h-4 w-4 text-yellow-600" />
+            <AlertDescription className="text-yellow-800">
+              Pricing data for your specific country is not available. Showing global average estimates.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Transparency Note */}
+        <Alert className="border-blue-500 bg-blue-50">
+          <Info className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-blue-800 space-y-2">
+            <p className="font-medium">💡 Pricing considerations:</p>
+            <ul className="text-sm space-y-1 ml-4 list-disc">
+              <li>Repair complexity level: {complexity}</li>
+              <li>Local market labor rates</li>
+              <li>Regional cost variations</li>
+            </ul>
+            <p className="text-xs mt-2 border-t border-blue-200 pt-2">
+              Actual costs may vary by technician and location. Always get multiple quotes.
+            </p>
+          </AlertDescription>
+        </Alert>
+      </CardContent>
+    </Card>
+  );
+};
+
+// ============================================================
+// MAIN RESULT COMPONENT
+// ============================================================
+
 const Result = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -44,10 +236,31 @@ const Result = () => {
   const [exporting, setExporting] = useState(false);
   const [youtubeVideos, setYoutubeVideos] = useState<YouTubeVideo[]>([]);
   const [loadingVideos, setLoadingVideos] = useState(false);
+  const [userCountry, setUserCountry] = useState<string>('NG'); // Default to Nigeria
 
   useEffect(() => {
     fetchDiagnostic();
+    fetchUserCountry();
   }, [id]);
+
+  const fetchUserCountry = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("country")
+        .eq("id", user.id)
+        .single();
+
+      if (profile?.country) {
+        setUserCountry(profile.country);
+      }
+    } catch (error) {
+      console.error("Error fetching user country:", error);
+    }
+  };
 
   const fetchDiagnostic = async () => {
     try {
@@ -71,7 +284,6 @@ const Result = () => {
 
       setDiagnostic(data);
       
-      // Fetch YouTube videos based on the diagnosis
       if (data) {
         fetchYouTubeVideos(data);
       }
@@ -86,15 +298,19 @@ const Result = () => {
   const fetchYouTubeVideos = async (diagnosticData: Diagnostic) => {
     setLoadingVideos(true);
     try {
-      // Create a search query based on the diagnostic data
       const applianceType = diagnosticData.appliances?.type || "appliance";
       const mainCause = diagnosticData.probable_causes[0] || "repair";
       
-      // Build search query
       const searchQuery = `how to fix ${applianceType} ${mainCause} repair tutorial`;
       
-      // YouTube API endpoint (you'll need to add your API key)
-      const API_KEY = "YOUR_YOUTUBE_API_KEY"; // Store this in environment variables
+      // Note: YouTube API key should be configured in environment
+      const API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
+      
+      if (!API_KEY) {
+        console.log("YouTube API key not configured");
+        return;
+      }
+      
       const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(searchQuery)}&type=video&maxResults=3&key=${API_KEY}`;
 
       const response = await fetch(url);
@@ -105,19 +321,17 @@ const Result = () => {
 
       const data = await response.json();
       
-      // Transform the response to our format
       const videos: YouTubeVideo[] = data.items.map((item: any) => ({
         id: item.id.videoId,
         title: item.snippet.title,
         thumbnail: item.snippet.thumbnails.medium.url,
         channelTitle: item.snippet.channelTitle,
-        duration: "" // We'll keep this empty or you can fetch it with an additional API call
+        duration: ""
       }));
 
       setYoutubeVideos(videos);
     } catch (error) {
       console.error("Error fetching YouTube videos:", error);
-      // Fail silently - the page will still work without videos
     } finally {
       setLoadingVideos(false);
     }
@@ -225,6 +439,9 @@ const Result = () => {
             </CardContent>
           </Card>
 
+          {/* NEW: Country-Aware Repair Cost */}
+          <RepairCostEstimate diagnostic={diagnostic} userCountry={userCountry} />
+
           {/* YouTube Video Recommendations */}
           {youtubeVideos.length > 0 && (
             <Card>
@@ -278,23 +495,6 @@ const Result = () => {
               </CardContent>
             </Card>
           )}
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <DollarSign className="w-5 h-5" />
-                Estimated Repair Cost
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-primary mb-4">
-                ₦{diagnostic.estimated_cost_min} - ₦{diagnostic.estimated_cost_max}
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Prices may vary by location and technician. Always get multiple quotes.
-              </p>
-            </CardContent>
-          </Card>
 
           {diagnostic.scam_alerts && diagnostic.scam_alerts.length > 0 && (
             <Card className="border-destructive/50">

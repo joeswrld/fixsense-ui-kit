@@ -9,6 +9,7 @@ import { Wrench, ArrowLeft, Calendar, Filter, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { AppHeader } from "@/components/AppHeader";
+import { formatPriceRange } from "@/lib/currencyUtils";
 
 interface Diagnostic {
   id: string;
@@ -30,6 +31,7 @@ const History = () => {
   const [filteredDiagnostics, setFilteredDiagnostics] = useState<Diagnostic[]>([]);
   const [loading, setLoading] = useState(true);
   const [properties, setProperties] = useState<any[]>([]);
+  const [userCurrency, setUserCurrency] = useState<string>("NGN");
   
   const [propertyFilter, setPropertyFilter] = useState<string>("all");
   const [urgencyFilter, setUrgencyFilter] = useState<string>("all");
@@ -49,6 +51,17 @@ const History = () => {
       if (!user) {
         navigate("/auth");
         return;
+      }
+
+      // Fetch user's currency preference
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("currency")
+        .eq("id", user.id)
+        .single();
+
+      if (!profileError && profileData?.currency) {
+        setUserCurrency(profileData.currency);
       }
 
       const { data: diagnosticsData, error: diagnosticsError } = await supabase
@@ -253,7 +266,13 @@ const History = () => {
                         {diagnostic.appliances?.type && `Type: ${diagnostic.appliances.type}`}
                       </span>
                       <span className="font-semibold text-primary">
-                        ${diagnostic.estimated_cost_min} - ${diagnostic.estimated_cost_max}
+                        {diagnostic.estimated_cost_min && diagnostic.estimated_cost_max
+                          ? formatPriceRange(
+                              diagnostic.estimated_cost_min,
+                              diagnostic.estimated_cost_max,
+                              userCurrency
+                            )
+                          : "Estimate unavailable"}
                       </span>
                     </div>
                   </CardContent>
