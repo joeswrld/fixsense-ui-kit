@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, Upload, DollarSign, CheckCircle2, Clock } from "lucide-react";
 import { toast } from "sonner";
+import { useCurrency } from "@/hooks/useCurrency";
 
 interface MaintenanceHistoryProps {
   applianceId: string;
@@ -24,6 +25,7 @@ export const MaintenanceHistory = ({ applianceId }: MaintenanceHistoryProps) => 
   const [beforePhoto, setBeforePhoto] = useState<File | null>(null);
   const [afterPhoto, setAfterPhoto] = useState<File | null>(null);
   const queryClient = useQueryClient();
+  const { format: formatCurrency, symbol } = useCurrency();
 
   const { data: vendors } = useQuery({
     queryKey: ["vendors"],
@@ -182,7 +184,7 @@ export const MaintenanceHistory = ({ applianceId }: MaintenanceHistoryProps) => 
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="cost">Cost ($)</Label>
+                  <Label htmlFor="cost">Cost ({symbol})</Label>
                   <Input
                     id="cost"
                     type="number"
@@ -253,9 +255,8 @@ export const MaintenanceHistory = ({ applianceId }: MaintenanceHistoryProps) => 
                     )}
                   </div>
                   {record.cost && (
-                    <div className="flex items-center gap-1 font-semibold text-primary">
-                      <DollarSign className="w-4 h-4" />
-                      {record.cost.toFixed(2)}
+                    <div className="font-semibold text-primary">
+                      {formatCurrency(record.cost)}
                     </div>
                   )}
                 </div>

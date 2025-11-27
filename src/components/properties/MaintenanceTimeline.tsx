@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, DollarSign, Loader2, Filter } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useCurrency } from "@/hooks/useCurrency";
 
 interface MaintenanceRecord {
   id: string;
@@ -27,6 +28,7 @@ interface MaintenanceRecord {
 export const MaintenanceTimeline = () => {
   const [sortBy, setSortBy] = useState<"date" | "cost">("date");
   const [filterType, setFilterType] = useState<string>("all");
+  const { format: formatCurrency } = useCurrency();
 
   const { data: history, isLoading } = useQuery({
     queryKey: ["maintenance-timeline"],
@@ -120,8 +122,7 @@ export const MaintenanceTimeline = () => {
             </CardDescription>
           </div>
           <Badge variant="outline" className="gap-1">
-            <DollarSign className="w-3 h-3" />
-            ${totalCost.toFixed(2)} Total
+            {formatCurrency(totalCost)} Total
           </Badge>
         </div>
         <div className="flex gap-2 pt-4">
@@ -185,9 +186,8 @@ export const MaintenanceTimeline = () => {
                         </div>
                       </div>
                       {record.cost && (
-                        <div className="flex items-center gap-1 font-semibold text-primary">
-                          <DollarSign className="w-4 h-4" />
-                          {record.cost.toFixed(2)}
+                        <div className="font-semibold text-primary">
+                          {formatCurrency(record.cost)}
                         </div>
                       )}
                     </div>

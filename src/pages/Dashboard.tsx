@@ -9,6 +9,7 @@ import { Wrench, FileSearch, Home, LogOut, Upload, History, Building2, DollarSig
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { MaintenanceCostWidget } from "@/components/dashboard/MaintenanceCostWidget";
+import { useCurrency } from "@/hooks/useCurrency";
 
 interface Diagnostic {
   id: string;
@@ -47,6 +48,7 @@ const Dashboard = () => {
   });
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { format: formatCurrency } = useCurrency();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -319,8 +321,7 @@ const Dashboard = () => {
               <CardHeader className="pb-3">
                 <CardDescription>Estimated Savings</CardDescription>
                 <CardTitle className="text-3xl flex items-center gap-2 text-primary">
-                  <DollarSign className="w-6 h-6" />
-                  {stats.estimatedSavings}
+                  {formatCurrency(stats.estimatedSavings)}
                 </CardTitle>
               </CardHeader>
               <CardContent>

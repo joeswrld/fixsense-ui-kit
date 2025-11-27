@@ -3,8 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, TrendingUp, TrendingDown, Loader2 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { useCurrency } from "@/hooks/useCurrency";
 
 export const MaintenanceCostWidget = () => {
+  const { format: formatCurrency } = useCurrency();
+  
   const { data: costData, isLoading } = useQuery({
     queryKey: ["maintenance-costs"],
     queryFn: async () => {
@@ -87,7 +90,7 @@ export const MaintenanceCostWidget = () => {
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground">Last Month</p>
-            <p className="text-2xl font-bold">${lastMonthCost.toFixed(2)}</p>
+            <p className="text-2xl font-bold">{formatCurrency(lastMonthCost)}</p>
             {trend !== 0 && (
               <div className="flex items-center gap-1 text-sm">
                 {trend > 0 ? (
@@ -106,9 +109,9 @@ export const MaintenanceCostWidget = () => {
           </div>
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground">Total (12 months)</p>
-            <p className="text-2xl font-bold">${totalCost.toFixed(2)}</p>
+            <p className="text-2xl font-bold">{formatCurrency(totalCost)}</p>
             <p className="text-sm text-muted-foreground">
-              Avg: ${(totalCost / 12).toFixed(2)}/mo
+              Avg: {formatCurrency(totalCost / 12)}/mo
             </p>
           </div>
         </div>
@@ -133,7 +136,7 @@ export const MaintenanceCostWidget = () => {
                     border: '1px solid hsl(var(--border))',
                     borderRadius: '8px',
                   }}
-                  formatter={(value: number) => [`$${value.toFixed(2)}`, 'Cost']}
+                  formatter={(value: number) => [formatCurrency(value), 'Cost']}
                 />
                 <Line 
                   type="monotone" 
