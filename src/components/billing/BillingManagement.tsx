@@ -1,19 +1,23 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Crown, Loader2, Receipt, Calendar, CreditCard, Download } from "lucide-react";
-import { toast } from "sonner";
+import { Check, CheckCircle2, Crown, Loader2, Receipt, Calendar, CreditCard, Download, Info } from "lucide-react";
 
-import UsageSection from '@/components/billing/UsageSection';
+// Fixed exchange rate configuration (₦1500 = $1)
+const FX_CONFIG = {
+  NGN_TO_USD: 1500,
+  FALLBACK_RATE: 1500,
+};
+
+// Convert kobo to USD for display
+const convertToUSD = (kobo: number): string => {
+  const ngn = kobo / 100;
+  const usd = ngn / FX_CONFIG.NGN_TO_USD;
+  return usd.toFixed(2);
+};
 
 const plans = [
   {
     name: "Free",
-    price: 0,
+    price: 0, // in kobo
     tier: "free",
     features: [
       "2 photo diagnostics per month",
@@ -38,7 +42,6 @@ const plans = [
       "Full history",
       "Priority support",
     ],
-    
   },
   {
     name: "Host Business",
@@ -60,573 +63,263 @@ const plans = [
     popular: true,
   },
 ];
-interface Transaction {
-  id: string;
-  amount: number;
-  status: string;
-  plan: string;
-  reference: string;
-  created_at: string;
-  payment_method?: string;
-}
 
-export const BillingManagement = () => {
-  const [processingPlan, setProcessingPlan] = useState<string | null>(null);
-  const [verifying, setVerifying] = useState(false);
-  const [downloadingReceipt, setDownloadingReceipt] = useState<string | null>(null);
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-
-  const { data: profile, isLoading, refetch } = useQuery({
-    queryKey: ["profile"],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const { data: transactions, isLoading: isLoadingTransactions } = useQuery<Transaction[]>({
-    queryKey: ["transactions"],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const { data, error } = await supabase
-        .from("transactions")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      return (data || []) as Transaction[];
-    },
-  });
-
-
-
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const reference = urlParams.get('reference') || urlParams.get('trxref');
-    
-    if (reference) {
-      verifyPayment(reference);
-    }
-  }, []);
-
-  const verifyPayment = async (reference: string) => {
-    setVerifying(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("paystack-verify-transaction", {
-        body: { reference },
-      });
-
-      if (error) throw error;
-
-      if (data?.data?.status === "success") {
-        toast.success("Payment successful! Your subscription is now active.");
-        await refetch();
-        queryClient.invalidateQueries({ queryKey: ["transactions"] });
-        
-        const url = new URL(window.location.href);
-        url.searchParams.delete('reference');
-        url.searchParams.delete('trxref');
-        window.history.replaceState({}, '', url.toString());
-      } else {
-        toast.error("Payment verification failed. Please contact support.");
-      }
-    } catch (error) {
-      console.error("Payment verification error:", error);
-      toast.error("Failed to verify payment. Please contact support.");
-    } finally {
-      setVerifying(false);
-    }
-  };
-
-  const initializePayment = async (plan: typeof plans[0]) => {
-    try {
-      setProcessingPlan(plan.tier);
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const { data, error } = await supabase.functions.invoke("paystack-initialize-transaction", {
-        body: {
-          email: profile?.email || user.email,
-          amount: plan.price,
-          plan: plan.name,
-          callback_url: window.location.origin + "/settings?tab=billing",
-        },
-      });
-
-      if (error) throw error;
-
-      if (data.data?.authorization_url) {
-        window.location.href = data.data.authorization_url;
-      }
-    } catch (error: any) {
-      toast.error("Failed to initialize payment");
-      console.error(error);
-    } finally {
-      setProcessingPlan(null);
-    }
-  };
-
-  const cancelSubscriptionMutation = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.functions.invoke("paystack-cancel-subscription");
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["profile"] });
-      toast.success("Subscription cancelled successfully");
-    },
-    onError: (error) => {
-      toast.error("Failed to cancel subscription");
-      console.error(error);
-    },
-  });
-
-  const downloadReceipt = async (transaction: Transaction) => {
-    setDownloadingReceipt(transaction.id);
-    
-    try {
-      const receiptHTML = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-              max-width: 800px;
-              margin: 0 auto;
-              padding: 40px;
-              background: #f5f5f5;
-            }
-            .receipt {
-              background: white;
-              padding: 40px;
-              border-radius: 8px;
-              box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            }
-            .header {
-              text-align: center;
-              margin-bottom: 40px;
-              padding-bottom: 20px;
-              border-bottom: 2px solid #e5e5e5;
-            }
-            .logo {
-              font-size: 32px;
-              font-weight: bold;
-              color: #6366f1;
-              margin-bottom: 10px;
-            }
-            .title {
-              font-size: 24px;
-              font-weight: bold;
-              margin-bottom: 10px;
-            }
-            .success-badge {
-              display: inline-block;
-              background: #10b981;
-              color: white;
-              padding: 6px 16px;
-              border-radius: 20px;
-              font-size: 14px;
-              font-weight: 600;
-              margin-top: 10px;
-            }
-            .info-section {
-              margin: 30px 0;
-            }
-            .info-row {
-              display: flex;
-              justify-content: space-between;
-              padding: 12px 0;
-              border-bottom: 1px solid #f0f0f0;
-            }
-            .info-label {
-              color: #666;
-              font-weight: 500;
-            }
-            .info-value {
-              color: #333;
-              font-weight: 600;
-            }
-            .amount-section {
-              background: #f9fafb;
-              padding: 20px;
-              border-radius: 8px;
-              margin: 30px 0;
-              text-align: center;
-            }
-            .amount-label {
-              color: #666;
-              font-size: 14px;
-              margin-bottom: 8px;
-            }
-            .amount-value {
-              font-size: 36px;
-              font-weight: bold;
-              color: #6366f1;
-            }
-            .footer {
-              margin-top: 40px;
-              padding-top: 20px;
-              border-top: 2px solid #e5e5e5;
-              text-align: center;
-              color: #666;
-              font-size: 14px;
-            }
-            .footer-note {
-              margin-top: 20px;
-              font-size: 12px;
-              color: #999;
-            }
-            @media print {
-              body {
-                background: white;
-                padding: 0;
-              }
-              .receipt {
-                box-shadow: none;
-              }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="receipt">
-            <div class="header">
-              <div class="logo">🔧 FixSense</div>
-              <div class="title">Payment Receipt</div>
-              <div class="success-badge">✓ PAID</div>
-            </div>
-
-            <div class="info-section">
-              <div class="info-row">
-                <span class="info-label">Receipt Number</span>
-                <span class="info-value">${transaction.reference}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Date</span>
-                <span class="info-value">${new Date(transaction.created_at).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Customer Email</span>
-                <span class="info-value">${profile?.email || 'N/A'}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Plan</span>
-                <span class="info-value">${transaction.plan} Plan</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Payment Method</span>
-                <span class="info-value">${transaction.payment_method || 'Card'}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Status</span>
-                <span class="info-value" style="color: #10b981;">SUCCESS</span>
-              </div>
-            </div>
-
-            <div class="amount-section">
-              <div class="amount-label">Amount Paid</div>
-              <div class="amount-value">₦${(transaction.amount / 100).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-            </div>
-
-            <div class="footer">
-              <p><strong>Thank you for your payment!</strong></p>
-              <p>Your subscription has been activated successfully.</p>
-              <div class="footer-note">
-                <p>This is a computer-generated receipt and does not require a signature.</p>
-                <p>For any questions, please contact support@fixsense.com</p>
-                <p>© ${new Date().getFullYear()} FixSense. All rights reserved.</p>
-              </div>
-            </div>
-          </div>
-        </body>
-        </html>
-      `;
-
-      const blob = new Blob([receiptHTML], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `FixSense_Receipt_${transaction.reference}.html`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      toast.success("Receipt downloaded successfully!");
-    } catch (error) {
-      console.error("Error downloading receipt:", error);
-      toast.error("Failed to download receipt");
-    } finally {
-      setDownloadingReceipt(null);
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "success":
-      case "completed":
-        return <Badge variant="default" className="bg-green-500">Success</Badge>;
-      case "pending":
-        return <Badge variant="secondary">Pending</Badge>;
-      case "failed":
-        return <Badge variant="destructive">Failed</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
-  };
-
-  if (isLoading || verifying) {
-    return (
-      <Card>
-        <CardContent className="py-8 flex justify-center">
-          <Loader2 className="w-6 h-6 animate-spin text-primary" />
-        </CardContent>
-      </Card>
-    );
+// Price Display Component
+const PriceDisplay = ({ kobo, className = "" }: { kobo: number; className?: string }) => {
+  if (kobo === 0) {
+    return <div className={`text-4xl font-bold ${className}`}>Free</div>;
   }
 
-  const currentTier = profile?.subscription_tier || "free";
-  const isActive = profile?.subscription_status === "active";
-  const isPaidUser = isActive && currentTier !== "free";
-  const currentPlan = plans.find(p => p.tier === currentTier);
+  const ngnPrice = (kobo / 100).toLocaleString('en-NG', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  const usdPrice = convertToUSD(kobo);
 
   return (
-    <div className="space-y-6">
-      {/* Current Plan Status */}
-      <Card className={isPaidUser ? "border-primary" : ""}>
-        <CardHeader>
-          <CardTitle>Current Subscription</CardTitle>
-          <CardDescription>Your active plan and billing information</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between p-4 border rounded-lg bg-accent/10">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <h3 className="font-semibold text-xl">
-                  {currentPlan?.name || "Free"} Plan
-                </h3>
-                {isPaidUser ? (
-                  <Badge variant="default" className="gap-1">
-                    <Crown className="w-3 h-3" />
-                    Paid User
-                  </Badge>
-                ) : (
-                  <Badge variant="secondary">
-                    Free Tier
-                  </Badge>
-                )}
-                {isPaidUser && (
-                  <Badge variant="outline" className="gap-1">
-                    <CheckCircle2 className="w-3 h-3" />
-                    Active
-                  </Badge>
-                )}
-              </div>
-              
-              <p className="text-sm text-muted-foreground">
-                {isPaidUser 
-                  ? `₦${(currentPlan?.price ? currentPlan.price / 100 : 0).toLocaleString('en-NG')}/month` 
-                  : "No active subscription"}
-              </p>
-              
-              {isPaidUser && profile?.subscription_end_date && (
-                <p className="text-sm text-muted-foreground mt-2">
-                  Renews on {new Date(profile.subscription_end_date).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
-                </p>
-              )}
-            </div>
-            
-            {isPaidUser && (
-              <Button
-                variant="outline"
-                onClick={() => cancelSubscriptionMutation.mutate()}
-                disabled={cancelSubscriptionMutation.isPending}
-              >
-                {cancelSubscriptionMutation.isPending ? "Cancelling..." : "Cancel Subscription"}
-              </Button>
+    <div className={className}>
+      <div className="text-4xl font-bold text-gray-900">
+        ₦{ngnPrice}
+        <span className="text-lg font-normal text-gray-500">/month</span>
+      </div>
+      <div className="text-sm text-gray-500 mt-1">
+        (~${usdPrice} USD)
+      </div>
+    </div>
+  );
+};
+
+// Pricing Card Component
+const PricingCard = ({ 
+  plan, 
+  isCurrentPlan, 
+  onSelect, 
+  isProcessing 
+}: { 
+  plan: typeof plans[0]; 
+  isCurrentPlan: boolean; 
+  onSelect: () => void; 
+  isProcessing: boolean;
+}) => {
+  return (
+    <div
+      className={`relative bg-white rounded-2xl border-2 transition-all ${
+        plan.popular
+          ? "border-indigo-500 shadow-xl scale-105"
+          : isCurrentPlan
+          ? "border-indigo-300"
+          : "border-gray-200 hover:border-indigo-300"
+      }`}
+    >
+      {plan.popular && (
+        <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+          <div className="bg-indigo-500 text-white px-4 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
+            <Crown className="w-4 h-4" />
+            Recommended
+          </div>
+        </div>
+      )}
+
+      <div className="p-8">
+        {/* Plan Header */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-2xl font-bold text-gray-900">{plan.name}</h3>
+            {isCurrentPlan && (
+              <span className="text-xs bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full font-semibold">
+                Current
+              </span>
             )}
           </div>
-        </CardContent>
-      </Card>
+          <PriceDisplay kobo={plan.price} />
+        </div>
 
-      {/* Usage Limits Card */}
-      <UsageSection 
-  onUpgrade={() => navigate('/pricing')}
-  onBuyCredits={() => navigate('/credits')}
-/>
+        {/* Features List */}
+        <ul className="space-y-4 mb-8">
+          {plan.features.map((feature, index) => (
+            <li key={index} className="flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-indigo-500 flex-shrink-0 mt-0.5" />
+              <span className="text-sm text-gray-700">{feature}</span>
+            </li>
+          ))}
+        </ul>
 
-      {/* Available Plans */}
-      <div>
-        <h2 className="text-2xl font-bold mb-4">Choose Your Plan</h2>
-        <div className="grid gap-6 md:grid-cols-3">
+        {/* CTA Button */}
+        <button
+          onClick={onSelect}
+          disabled={isCurrentPlan || isProcessing}
+          className={`w-full py-3 px-6 rounded-lg font-semibold transition-all ${
+            isCurrentPlan
+              ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+              : plan.popular
+              ? "bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg hover:shadow-xl"
+              : "bg-gray-900 text-white hover:bg-gray-800"
+          }`}
+        >
+          {isProcessing ? (
+            <span className="flex items-center justify-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Processing...
+            </span>
+          ) : isCurrentPlan ? (
+            "Current Plan"
+          ) : plan.tier === "free" ? (
+            "Free Forever"
+          ) : (
+            "Upgrade Now"
+          )}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Main Component
+export default function DualPriceBilling() {
+  const [currentTier, setCurrentTier] = useState("free");
+  const [processingPlan, setProcessingPlan] = useState<string | null>(null);
+  const [transactions] = useState([
+    {
+      id: "1",
+      plan: "Pro",
+      amount: 530000,
+      status: "success",
+      reference: "PST_123456789",
+      created_at: new Date().toISOString(),
+      payment_method: "card",
+    },
+  ]);
+
+  const handleSelectPlan = async (plan: typeof plans[0]) => {
+    if (plan.tier === "free" || plan.tier === currentTier) return;
+
+    setProcessingPlan(plan.tier);
+
+    // Simulate payment initialization
+    setTimeout(() => {
+      console.log("Initializing Paystack payment with NGN amount:", plan.price);
+      console.log("Amount in NGN:", (plan.price / 100).toFixed(2));
+      console.log("USD reference only:", convertToUSD(plan.price));
+      
+      // In production: redirect to Paystack with NGN amount only
+      alert(`Would redirect to Paystack with ₦${(plan.price / 100).toFixed(2)} NGN`);
+      setProcessingPlan(null);
+    }, 1500);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-16 px-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-16">
+          <h1 className="text-5xl font-bold text-gray-900 mb-4">
+            Simple, Transparent{" "}
+            <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              Pricing
+            </span>
+          </h1>
+          <p className="text-xl text-gray-600 mb-6">
+            Choose the plan that fits your needs. No hidden fees, cancel anytime.
+          </p>
+          
+          {/* Payment Disclaimer */}
+          <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 text-sm text-blue-800">
+            <Info className="w-4 h-4" />
+            <span>
+              All payments are securely processed in Nigerian Naira (NGN). USD prices shown for reference only.
+            </span>
+          </div>
+        </div>
+
+        {/* Pricing Cards */}
+        <div className="grid md:grid-cols-3 gap-8 mb-16">
           {plans.map((plan) => (
-            <Card 
-              key={plan.tier} 
-              className={`${plan.popular ? "border-primary" : ""} ${plan.tier === currentTier ? "bg-accent/5" : ""}`}
-            >
-              {plan.popular && (
-                <div className="bg-primary text-primary-foreground text-center py-2 rounded-t-lg">
-                  <Badge variant="secondary">Recommended</Badge>
-                </div>
-              )}
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  {plan.name}
-                  {plan.tier === currentTier && (
-                    <Badge variant="outline" className="text-xs">
-                      Current
-                    </Badge>
-                  )}
-                </CardTitle>
-                <div className="text-3xl font-bold">
-                  {plan.price === 0 ? "Free" : `₦${(plan.price / 100).toLocaleString('en-NG')}`}
-                  {plan.price > 0 && <span className="text-sm font-normal text-muted-foreground">/month</span>}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <ul className="space-y-2">
-                  {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-start gap-2 text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Button
-                  className="w-full"
-                  variant={plan.tier === currentTier ? "outline" : plan.popular ? "default" : "outline"}
-                  disabled={plan.tier === currentTier || processingPlan !== null}
-                  onClick={() => plan.tier !== "free" && initializePayment(plan)}
-                >
-                  {processingPlan === plan.tier
-                    ? "Processing..."
-                    : plan.tier === currentTier
-                    ? isPaidUser ? "Current Plan" : "Free Plan"
-                    : plan.tier === "free"
-                    ? "Free Forever"
-                    : currentTier === "free" 
-                    ? "Upgrade Now" 
-                    : "Switch Plan"}
-                </Button>
-              </CardContent>
-            </Card>
+            <PricingCard
+              key={plan.tier}
+              plan={plan}
+              isCurrentPlan={plan.tier === currentTier}
+              onSelect={() => handleSelectPlan(plan)}
+              isProcessing={processingPlan === plan.tier}
+            />
           ))}
         </div>
-      </div>
 
-      {/* Transaction History */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Receipt className="w-5 h-5" />
-                Transaction History
-              </CardTitle>
-              <CardDescription>Your payment and subscription history</CardDescription>
-            </div>
+        {/* Transaction History */}
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <Receipt className="w-6 h-6 text-indigo-600" />
+            <h2 className="text-2xl font-bold text-gray-900">Transaction History</h2>
           </div>
-        </CardHeader>
-        <CardContent>
-          {isLoadingTransactions ? (
-            <div className="py-8 flex justify-center">
-              <Loader2 className="w-6 h-6 animate-spin text-primary" />
-            </div>
-          ) : transactions && transactions.length > 0 ? (
-            <div className="space-y-3">
+
+          {transactions.length > 0 ? (
+            <div className="space-y-4">
               {transactions.map((transaction) => (
                 <div
                   key={transaction.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/30 transition-colors"
+                  className="flex items-center justify-between p-6 border border-gray-200 rounded-xl hover:border-indigo-300 transition-all"
                 >
                   <div className="flex items-start gap-4 flex-1">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <CreditCard className="w-5 h-5 text-primary" />
+                    <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center">
+                      <CreditCard className="w-6 h-6 text-indigo-600" />
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <p className="font-medium">{transaction.plan} Plan</p>
-                        {getStatusBadge(transaction.status)}
+                        <p className="font-semibold text-gray-900">{transaction.plan} Plan</p>
+                        <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-semibold">
+                          ✓ Success
+                        </span>
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-gray-500 mb-1">
                         Reference: {transaction.reference}
                       </p>
-                      <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-2 text-xs text-gray-400">
                         <Calendar className="w-3 h-3" />
                         {new Date(transaction.created_at).toLocaleDateString('en-US', {
                           year: 'numeric',
                           month: 'long',
                           day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
                         })}
                       </div>
                     </div>
                   </div>
-                  <div className="text-right flex items-center gap-3">
-                    <div>
-                      <p className="font-semibold text-lg">
-                        ₦{(transaction.amount / 100).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
-                      {transaction.payment_method && (
-                        <p className="text-xs text-muted-foreground capitalize">
-                          {transaction.payment_method}
-                        </p>
-                      )}
-                    </div>
-                    {transaction.status.toLowerCase() === "success" && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => downloadReceipt(transaction)}
-                        disabled={downloadingReceipt === transaction.id}
-                      >
-                        {downloadingReceipt === transaction.id ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Download className="w-4 h-4" />
-                        )}
-                      </Button>
-                    )}
+                  
+                  <div className="text-right">
+                    <p className="font-bold text-xl text-gray-900">
+                      ₦{(transaction.amount / 100).toLocaleString('en-NG', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      (~${convertToUSD(transaction.amount)} USD)
+                    </p>
+                    <button className="mt-2 text-indigo-600 hover:text-indigo-700 text-sm font-semibold flex items-center gap-1">
+                      <Download className="w-4 h-4" />
+                      Receipt
+                    </button>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              <Receipt className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>No transactions yet</p>
+            <div className="text-center py-12 text-gray-500">
+              <Receipt className="w-16 h-16 mx-auto mb-4 opacity-30" />
+              <p className="text-lg">No transactions yet</p>
               <p className="text-sm mt-2">Your payment history will appear here</p>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* Footer Note */}
+        <div className="mt-8 text-center text-sm text-gray-500">
+          <p>
+            Exchange rate for reference: ₦1,500 = $1 USD • Prices are in Nigerian Naira (NGN)
+          </p>
+          <p className="mt-2">
+            Foreign cards are accepted through Paystack with automatic currency conversion
+          </p>
+        </div>
+      </div>
     </div>
   );
-};
+}
