@@ -95,7 +95,7 @@ const PriceDisplay = ({ ngn }: { ngn: number }) => {
   );
 };
 
-export default function PricingSection() {
+export const PricingSection = () => {
   return (
     <section className="py-20 md:py-32 bg-gradient-to-b from-white via-indigo-50/30 to-white">
       <div className="container px-4 max-w-7xl mx-auto">
