@@ -1,5 +1,5 @@
 import { Header } from "@/components/landing/Header";
-import { PricingSection } from "@/components/landing/PricingSection";
+import  PricingSection  from "@/components/landing/PricingSection";
 
 const Pricing = () => {
   return (
