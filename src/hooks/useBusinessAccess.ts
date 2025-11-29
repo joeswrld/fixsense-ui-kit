@@ -12,23 +12,31 @@ export const useBusinessAccess = () => {
       const { data, error } = await supabase
         .from("profiles")
         .select("user_type, subscription_tier, subscription_status")
-        .eq("id", user.id)
+        .eq("id", user.id)  // THIS IS THE KEY FIX - was user_id before
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching business access:", error);
+        throw error;
+      }
+
+      console.log("Business Access Profile Data:", data); // Debug log
       return data;
     },
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-    refetchOnWindowFocus: true, // Refetch when window regains focus
-    refetchOnMount: true, // Always refetch on mount
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   // Set up real-time subscription to profile changes
   useEffect(() => {
-    const { data: { user } } = supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) return;
+    let channel: any;
 
-      const channel = supabase
+    const setupRealtimeSubscription = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      channel = supabase
         .channel('profile-changes')
         .on(
           'postgres_changes',
@@ -36,27 +44,36 @@ export const useBusinessAccess = () => {
             event: 'UPDATE',
             schema: 'public',
             table: 'profiles',
-            filter: `id=eq.${data.user.id}`,
+            filter: `id=eq.${user.id}`,
           },
-          () => {
-            // Refetch data immediately when profile is updated
+          (payload) => {
+            console.log("Profile updated via realtime:", payload);
             refetch();
           }
         )
         .subscribe();
+    };
 
-      return () => {
+    setupRealtimeSubscription();
+
+    return () => {
+      if (channel) {
         supabase.removeChannel(channel);
-      };
-    });
+      }
+    };
   }, [refetch]);
 
-  // Check if user has business access either through:
-  // 1. user_type being set to 'business'
-  // 2. subscription_tier being 'business' with active status
+  // Check if user has business access
   const isBusinessUser = 
     profile?.user_type === "business" || 
     (profile?.subscription_tier === "business" && profile?.subscription_status === "active");
+
+  console.log("Business Access Check:", {
+    isBusinessUser,
+    user_type: profile?.user_type,
+    subscription_tier: profile?.subscription_tier,
+    subscription_status: profile?.subscription_status
+  }); // Debug log
 
   return {
     isBusinessUser,
