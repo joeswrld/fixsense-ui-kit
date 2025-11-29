@@ -10,12 +10,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Users, Plus, Phone, Mail, Globe, Star, Loader2, MapPin, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { BusinessAccessGate } from "@/components/BusinessAccessGate";
 import { VendorAnalytics } from "./VendorAnalytics";
 import { VendorBooking } from "./VendorBooking";
 import { VendorComparison } from "./VendorComparison";
 import { VendorReviews } from "./VendorReviews";
 
-export const VendorDirectory = () => {
+const VendorDirectoryContent = () => {
   const [open, setOpen] = useState(false);
   const [analyticsVendorId, setAnalyticsVendorId] = useState<string | null>(null);
   const [reviewsVendorId, setReviewsVendorId] = useState<string | null>(null);
@@ -42,7 +43,6 @@ export const VendorDirectory = () => {
 
       if (vendorsError) throw vendorsError;
 
-      // Fetch ratings for each vendor
       const vendorsWithRatings = await Promise.all(
         (vendorsData || []).map(async (vendor) => {
           const { data: ratings } = await supabase
@@ -129,90 +129,90 @@ export const VendorDirectory = () => {
                   Add Vendor
                 </Button>
               </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add Service Vendor</DialogTitle>
-                <DialogDescription>Add a trusted service provider</DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Vendor Name *</Label>
-                  <Input
-                    id="name"
-                    placeholder="e.g., ABC Appliance Repair"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add Service Vendor</DialogTitle>
+                  <DialogDescription>Add a trusted service provider</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="name">Vendor Name *</Label>
                     <Input
-                      id="email"
-                      type="email"
-                      placeholder="contact@vendor.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      id="name"
+                      placeholder="e.g., ABC Appliance Repair"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="contact@vendor.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Phone</Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        placeholder="(555) 123-4567"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="address">Address</Label>
+                    <Input
+                      id="address"
+                      placeholder="123 Main St, City, State"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Phone</Label>
+                    <Label htmlFor="website">Website</Label>
                     <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="(555) 123-4567"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      id="website"
+                      type="url"
+                      placeholder="https://vendor.com"
+                      value={website}
+                      onChange={(e) => setWebsite(e.target.value)}
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="specialties">Specialties (comma-separated)</Label>
+                    <Input
+                      id="specialties"
+                      placeholder="HVAC, Refrigerator, Plumbing"
+                      value={specialties}
+                      onChange={(e) => setSpecialties(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">Notes</Label>
+                    <Textarea
+                      id="notes"
+                      placeholder="Additional information..."
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                    />
+                  </div>
+                  <Button
+                    onClick={() => addVendorMutation.mutate()}
+                    disabled={!name || addVendorMutation.isPending}
+                    className="w-full"
+                  >
+                    {addVendorMutation.isPending ? "Saving..." : "Save Vendor"}
+                  </Button>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="address">Address</Label>
-                  <Input
-                    id="address"
-                    placeholder="123 Main St, City, State"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="website">Website</Label>
-                  <Input
-                    id="website"
-                    type="url"
-                    placeholder="https://vendor.com"
-                    value={website}
-                    onChange={(e) => setWebsite(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="specialties">Specialties (comma-separated)</Label>
-                  <Input
-                    id="specialties"
-                    placeholder="HVAC, Refrigerator, Plumbing"
-                    value={specialties}
-                    onChange={(e) => setSpecialties(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Notes</Label>
-                  <Textarea
-                    id="notes"
-                    placeholder="Additional information..."
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                  />
-                </div>
-                <Button
-                  onClick={() => addVendorMutation.mutate()}
-                  disabled={!name || addVendorMutation.isPending}
-                  className="w-full"
-                >
-                  {addVendorMutation.isPending ? "Saving..." : "Save Vendor"}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </CardHeader>
@@ -225,7 +225,7 @@ export const VendorDirectory = () => {
           <p className="text-muted-foreground text-center py-8">No vendors added yet</p>
         ) : (
           <div className="space-y-4">
-              {vendors.map((vendor) => (
+            {vendors.map((vendor) => (
               <div key={vendor.id} className="border rounded-lg p-4 space-y-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -314,7 +314,6 @@ export const VendorDirectory = () => {
         )}
       </CardContent>
 
-      {/* Analytics Dialog */}
       <Dialog open={!!analyticsVendorId} onOpenChange={(open) => !open && setAnalyticsVendorId(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -325,7 +324,6 @@ export const VendorDirectory = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Reviews Dialog */}
       <Dialog open={!!reviewsVendorId} onOpenChange={(open) => !open && setReviewsVendorId(null)}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           {reviewsVendorId && (
@@ -337,5 +335,13 @@ export const VendorDirectory = () => {
         </DialogContent>
       </Dialog>
     </Card>
+  );
+};
+
+export const VendorDirectory = () => {
+  return (
+    <BusinessAccessGate featureName="Service Vendor Directory">
+      <VendorDirectoryContent />
+    </BusinessAccessGate>
   );
 };

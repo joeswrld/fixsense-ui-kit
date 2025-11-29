@@ -8,15 +8,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Shield, Plus, Calendar, AlertTriangle, FileText, Loader2, Download } from "lucide-react";
+import { Shield, Plus, Calendar, AlertTriangle, FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { BusinessAccessGate } from "@/components/BusinessAccessGate";
 
 interface WarrantyManagerProps {
   applianceId: string;
 }
 
-export const WarrantyManager = ({ applianceId }: WarrantyManagerProps) => {
+const WarrantyManagerContent = ({ applianceId }: WarrantyManagerProps) => {
   const [open, setOpen] = useState(false);
   const [warrantyType, setWarrantyType] = useState("");
   const [provider, setProvider] = useState("");
@@ -287,3 +288,13 @@ export const WarrantyManager = ({ applianceId }: WarrantyManagerProps) => {
     </Card>
   );
 };
+
+export const WarrantyManager = (props: WarrantyManagerProps) => {
+  return (
+    <BusinessAccessGate featureName="Warranty Management">
+      <WarrantyManagerContent {...props} />
+    </BusinessAccessGate>
+  );
+};
+
+

@@ -2,11 +2,11 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, DollarSign, Loader2, Filter } from "lucide-react";
+import { Calendar, Loader2, Filter } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useCurrency } from "@/hooks/useCurrency";
+import { BusinessAccessGate } from "@/components/BusinessAccessGate";
 
 interface MaintenanceRecord {
   id: string;
@@ -25,7 +25,7 @@ interface MaintenanceRecord {
   };
 }
 
-export const MaintenanceTimeline = () => {
+const MaintenanceTimelineContent = () => {
   const [sortBy, setSortBy] = useState<"date" | "cost">("date");
   const [filterType, setFilterType] = useState<string>("all");
   const { format: formatCurrency } = useCurrency();
@@ -89,7 +89,6 @@ export const MaintenanceTimeline = () => {
     );
   }
 
-  // Filter records
   let filteredHistory = history || [];
   if (filterType !== "all") {
     filteredHistory = filteredHistory.filter((record) => 
@@ -97,7 +96,6 @@ export const MaintenanceTimeline = () => {
     );
   }
 
-  // Sort records
   if (sortBy === "cost") {
     filteredHistory = [...filteredHistory].sort((a, b) => 
       (b.cost || 0) - (a.cost || 0)
@@ -226,5 +224,13 @@ export const MaintenanceTimeline = () => {
         )}
       </CardContent>
     </Card>
+  );
+};
+
+export const MaintenanceTimeline = () => {
+  return (
+    <BusinessAccessGate featureName="Advanced Maintenance Timeline">
+      <MaintenanceTimelineContent />
+    </BusinessAccessGate>
   );
 };

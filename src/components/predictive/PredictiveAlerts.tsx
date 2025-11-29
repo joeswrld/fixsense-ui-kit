@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { AlertTriangle, Loader2, Sparkles, X, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { BusinessAccessGate } from "@/components/BusinessAccessGate";
 
 interface PredictiveAlertsProps {
   applianceId?: string;
 }
 
-export const PredictiveAlerts = ({ applianceId }: PredictiveAlertsProps) => {
+const PredictiveAlertsContent = ({ applianceId }: PredictiveAlertsProps) => {
   const queryClient = useQueryClient();
 
   const { data: alerts, isLoading } = useQuery({
@@ -197,3 +198,12 @@ export const PredictiveAlerts = ({ applianceId }: PredictiveAlertsProps) => {
     </Card>
   );
 };
+
+export const PredictiveAlerts = (props: PredictiveAlertsProps) => {
+  return (
+    <BusinessAccessGate featureName="AI Predictive Maintenance">
+      <PredictiveAlertsContent {...props} />
+    </BusinessAccessGate>
+  );
+};
+
