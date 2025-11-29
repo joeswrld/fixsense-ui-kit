@@ -290,7 +290,11 @@ const WarrantyManagerContent = ({ applianceId }: WarrantyManagerProps) => {
 };
 
 export const WarrantyManager = (props: WarrantyManagerProps) => {
-  return <WarrantyManagerContent {...props} />;
+  return (
+    <BusinessAccessGate featureName="Warranty Management">
+      <WarrantyManagerContent {...props} />
+    </BusinessAccessGate>
+  );
 };
 
 

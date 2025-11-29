@@ -339,5 +339,9 @@ const VendorDirectoryContent = () => {
 };
 
 export const VendorDirectory = () => {
-  return <VendorDirectoryContent />;
+  return (
+    <BusinessAccessGate featureName="Service Vendor Directory">
+      <VendorDirectoryContent />
+    </BusinessAccessGate>
+  );
 };

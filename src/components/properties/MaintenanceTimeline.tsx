@@ -228,5 +228,9 @@ const MaintenanceTimelineContent = () => {
 };
 
 export const MaintenanceTimeline = () => {
-  return <MaintenanceTimelineContent />;
+  return (
+    <BusinessAccessGate featureName="Advanced Maintenance Timeline">
+      <MaintenanceTimelineContent />
+    </BusinessAccessGate>
+  );
 };

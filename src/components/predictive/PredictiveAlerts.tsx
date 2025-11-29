@@ -200,6 +200,10 @@ const PredictiveAlertsContent = ({ applianceId }: PredictiveAlertsProps) => {
 };
 
 export const PredictiveAlerts = (props: PredictiveAlertsProps) => {
-  return <PredictiveAlertsContent {...props} />;
+  return (
+    <BusinessAccessGate featureName="AI Predictive Maintenance">
+      <PredictiveAlertsContent {...props} />
+    </BusinessAccessGate>
+  );
 };
 
