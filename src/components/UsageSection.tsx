@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import React, { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { usePaymentSuccess } from "@/hooks/usePaymentSuccess";
 import { 
   Camera, 
   Video, 
@@ -51,7 +52,7 @@ interface UsageSectionProps {
   onUpgrade?: () => void;
   onBuyCredits?: () => void;
 }
-
+const { handlePaymentSuccess } = usePaymentSuccess();
 const plans = [
   {
     name: "Pro",
@@ -82,6 +83,7 @@ const plans = [
 const UsageSection: React.FC<UsageSectionProps> = ({ onUpgrade, onBuyCredits }) => {
   const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false);
   const [processingPlan, setProcessingPlan] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   const { data: usage, isLoading, error } = useQuery({
     queryKey: ['user-usage'],
@@ -107,8 +109,8 @@ const UsageSection: React.FC<UsageSectionProps> = ({ onUpgrade, onBuyCredits }) 
       const tier = usageData.subscription_tier || 'free';
       const propertyLimits = {
         free: 1,
-        pro: 5,
-        business: 30
+        pro: 10,
+        business: 50
       };
 
       return {
@@ -137,6 +139,32 @@ const UsageSection: React.FC<UsageSectionProps> = ({ onUpgrade, onBuyCredits }) 
     },
   });
 
+  // Check for payment success on page load
+  useEffect(() => {
+    const checkPaymentSuccess = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const paymentSuccess = urlParams.get('payment_success');
+      
+      if (paymentSuccess === 'true') {
+        // Wait a moment for backend to process
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Refetch all relevant queries
+        await queryClient.invalidateQueries({ queryKey: ['user-profile-business-access'] });
+        await queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+        await queryClient.invalidateQueries({ queryKey: ['user-usage'] });
+        
+        // Remove the query parameter
+        const newUrl = window.location.pathname + window.location.search.replace(/[?&]payment_success=true/, '');
+        window.history.replaceState({}, '', newUrl);
+        
+        toast.success("🎉 Welcome to your new plan! All features are now unlocked.");
+      }
+    };
+    
+    checkPaymentSuccess();
+  }, [queryClient]);
+
   const initializePayment = async (plan: typeof plans[0]) => {
     try {
       setProcessingPlan(plan.tier);
@@ -149,7 +177,7 @@ const UsageSection: React.FC<UsageSectionProps> = ({ onUpgrade, onBuyCredits }) 
           email: profile?.email || user.email,
           amount: plan.price,
           plan: plan.name,
-          callback_url: window.location.origin + "/settings?tab=billing",
+          callback_url: window.location.origin + "/settings?tab=billing&payment_success=true",
         },
       });
 
