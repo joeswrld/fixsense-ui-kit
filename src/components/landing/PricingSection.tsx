@@ -1,32 +1,14 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Check, Info, Crown, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
-// Simulated auth and supabase - replace with actual imports
-const useAuth = () => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  
-  useEffect(() => {
-    // Simulate checking auth
-    setTimeout(() => {
-      // Set to null for logged out, or user object for logged in
-      setUser(null); // Change this to test logged in state
-      setLoading(false);
-    }, 500);
-  }, []);
-  
-  return { user, loading };
-};
-
-// Fixed exchange rate configuration (₦1500 = $1)
+// Exchange rate configuration
 const FX_CONFIG = {
   NGN_TO_USD: 1500,
-  FALLBACK_RATE: 1500,
 };
 
-// Convert NGN to USD for display
-const convertToUSD = (ngn) => {
+const convertToUSD = (ngn: number) => {
   const usd = ngn / FX_CONFIG.NGN_TO_USD;
   return usd.toFixed(2);
 };
@@ -89,7 +71,7 @@ const plans = [
 ];
 
 // Price Display Component
-const PriceDisplay = ({ ngn }) => {
+const PriceDisplay = ({ ngn }: { ngn: number }) => {
   if (ngn === 0) {
     return (
       <div className="flex items-baseline justify-center gap-1">
@@ -119,65 +101,72 @@ const PriceDisplay = ({ ngn }) => {
 
 const PricingPage = () => {
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const [searchParams] = useSearchParams();
+  const [user, setUser] = useState<any>(null);
   const [currentTier, setCurrentTier] = useState('free');
-  const [processingPlan, setProcessingPlan] = useState(null);
+  const [processingPlan, setProcessingPlan] = useState<string | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
+  // Check authentication on mount
   useEffect(() => {
-    if (user) {
-      // Fetch user's current subscription tier
-      fetchUserTier();
-    }
-  }, [user]);
+    checkAuth();
+  }, []);
 
-  const fetchUserTier = async () => {
-    // Simulate fetching user tier from database
-    // Replace with actual Supabase query
-    setCurrentTier('free');
+  // Handle checkout after login redirect
+  useEffect(() => {
+    const planFromUrl = searchParams.get('plan');
+    if (user && planFromUrl && !processingPlan) {
+      const plan = plans.find(p => p.tier === planFromUrl);
+      if (plan && plan.tier !== 'free') {
+        handlePricingAction(plan);
+      }
+    }
+  }, [user, searchParams]);
+
+  const checkAuth = async () => {
+    try {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      setUser(currentUser);
+
+      if (currentUser) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('subscription_tier')
+          .eq('id', currentUser.id)
+          .single();
+        
+        setCurrentTier(profile?.subscription_tier || 'free');
+      }
+    } catch (error) {
+      console.error('Error checking auth:', error);
+    } finally {
+      setAuthLoading(false);
+    }
   };
 
-  const handlePlanClick = async (plan) => {
-    if (authLoading) return;
-
-    // If user is not logged in, redirect to auth
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-
-    // If free plan or current plan, do nothing
-    if (plan.tier === 'free' || plan.tier === currentTier) {
-      return;
-    }
-
-    // Initialize payment
-    setProcessingPlan(plan.tier);
-    
+  const initializePaystackCheckout = async (plan: typeof plans[0]) => {
     try {
-      // Simulate Paystack initialization
-      // Replace with actual Supabase edge function call
-      console.log('Initializing payment for:', plan.name, 'Amount:', plan.priceKobo);
-      
-      // In real implementation:
-      const { data, error } = await supabase.functions.invoke("paystack-initialize-transaction", {
-       body: {
-          email: user.email,
-          amount: plan.priceKobo,
-          plan: plan.name,
-          callback_url: window.location.origin + "/settings?tab=billing",
-       },
-     });
-      
-     if (error) throw error;
-     if (data.data?.authorization_url) {
-       window.location.href = data.data.authorization_url;
-     }
+      setProcessingPlan(plan.tier);
 
-      // For demo, show alert
-      setTimeout(() => {
-        alert(`Payment initialized for ${plan.name}. In production, you'd be redirected to Paystack.`);
-        setProcessingPlan(null);
-      }, 1500);
+      const { data, error } = await supabase.functions.invoke(
+        "paystack-initialize-transaction",
+        {
+          body: {
+            email: user.email,
+            amount: plan.priceKobo,
+            plan: plan.name,
+            callback_url: window.location.origin + "/settings?tab=billing",
+          },
+        }
+      );
+
+      if (error) throw error;
+
+      if (data.data?.authorization_url) {
+        window.location.href = data.data.authorization_url;
+      } else {
+        throw new Error('No authorization URL returned');
+      }
     } catch (error) {
       console.error('Payment initialization failed:', error);
       alert('Failed to initialize payment. Please try again.');
@@ -185,9 +174,29 @@ const PricingPage = () => {
     }
   };
 
-  const getButtonText = (plan) => {
+  const handlePricingAction = async (plan: typeof plans[0]) => {
+    // Don't proceed if already processing
+    if (processingPlan) return;
+
+    // Free plan or current plan - do nothing
+    if (plan.tier === 'free' || plan.tier === currentTier) {
+      return;
+    }
+
+    // Check if user is authenticated
+    if (!user) {
+      // Redirect to auth with plan in URL
+      navigate(`/auth?redirect=pricing&plan=${plan.tier}`);
+      return;
+    }
+
+    // User is authenticated - proceed to checkout
+    await initializePaystackCheckout(plan);
+  };
+
+  const getButtonText = (plan: typeof plans[0]) => {
     if (processingPlan === plan.tier) {
-      return 'Processing...';
+      return 'Redirecting to Checkout...';
     }
     
     if (!user) {
@@ -202,10 +211,10 @@ const PricingPage = () => {
       return 'Downgrade';
     }
     
-    return plan.cta;
+    return user ? 'Proceed to Checkout' : plan.cta;
   };
 
-  const isButtonDisabled = (plan) => {
+  const isButtonDisabled = (plan: typeof plans[0]) => {
     return processingPlan !== null || (user && plan.tier === currentTier);
   };
 
@@ -308,7 +317,7 @@ const PricingPage = () => {
                         ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed' 
                         : 'bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed'
                     }`}
-                    onClick={() => handlePlanClick(plan)}
+                    onClick={() => handlePricingAction(plan)}
                     disabled={isButtonDisabled(plan)}
                   >
                     {processingPlan === plan.tier && (
