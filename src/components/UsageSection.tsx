@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { usePaymentSuccess } from "@/hooks/usePaymentSuccess";
 import { 
   Camera, 
   Video, 
@@ -52,7 +51,7 @@ interface UsageSectionProps {
   onUpgrade?: () => void;
   onBuyCredits?: () => void;
 }
-const { handlePaymentSuccess } = usePaymentSuccess();
+
 const plans = [
   {
     name: "Pro",
