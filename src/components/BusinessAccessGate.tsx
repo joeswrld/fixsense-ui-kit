@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Lock, Loader2, Sparkles } from "lucide-react";
 import { ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface BusinessAccessGateProps {
   children: ReactNode;
@@ -11,6 +12,12 @@ interface BusinessAccessGateProps {
 
 export const BusinessAccessGate = ({ children, featureName }: BusinessAccessGateProps) => {
   const { isBusinessUser, isLoading } = useBusinessAccess();
+  const navigate = useNavigate();
+
+  const handleUpgradeClick = () => {
+    // Navigate to settings page with billing tab selected
+    navigate("/settings?tab=billing");
+  };
 
   if (isLoading) {
     return (
@@ -65,7 +72,11 @@ export const BusinessAccessGate = ({ children, featureName }: BusinessAccessGate
                 </li>
               </ul>
             </div>
-            <Button size="lg" className="w-full max-w-xs">
+            <Button 
+              size="lg" 
+              className="w-full max-w-xs"
+              onClick={handleUpgradeClick}
+            >
               <Sparkles className="w-4 h-4 mr-2" />
               Upgrade to Business
             </Button>
@@ -77,4 +88,3 @@ export const BusinessAccessGate = ({ children, featureName }: BusinessAccessGate
 
   return <>{children}</>;
 };
-
