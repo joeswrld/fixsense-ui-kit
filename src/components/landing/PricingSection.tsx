@@ -178,8 +178,13 @@ const PricingPage = () => {
     // Don't proceed if already processing
     if (processingPlan) return;
 
-    // Free plan or current plan - do nothing
-    if (plan.tier === 'free' || plan.tier === currentTier) {
+    // Free plan - do nothing
+    if (plan.tier === 'free') {
+      return;
+    }
+
+    // Current plan - do nothing
+    if (plan.tier === currentTier) {
       return;
     }
 
@@ -190,7 +195,7 @@ const PricingPage = () => {
       return;
     }
 
-    // User is authenticated - proceed to checkout
+    // User is authenticated and wants to upgrade - proceed to checkout
     await initializePaystackCheckout(plan);
   };
 
@@ -199,23 +204,32 @@ const PricingPage = () => {
       return 'Redirecting to Checkout...';
     }
     
-    if (!user) {
-      return plan.tier === 'free' ? 'Get Started' : 'Sign Up to Upgrade';
-    }
-    
     if (plan.tier === currentTier) {
       return 'Current Plan';
     }
     
     if (plan.tier === 'free') {
-      return 'Downgrade';
+      return user ? 'Current Plan' : 'Get Started';
     }
     
-    return user ? 'Proceed to Checkout' : plan.cta;
+    if (!user) {
+      return 'Sign Up to Upgrade';
+    }
+    
+    return 'Proceed to Checkout';
   };
 
   const isButtonDisabled = (plan: typeof plans[0]) => {
-    return processingPlan !== null || (user && plan.tier === currentTier);
+    // Disable if processing any plan
+    if (processingPlan !== null) return true;
+    
+    // Disable if it's the current plan
+    if (user && plan.tier === currentTier) return true;
+    
+    // Disable free plan for logged-in users
+    if (user && plan.tier === 'free') return true;
+    
+    return false;
   };
 
   if (authLoading) {
