@@ -73,3 +73,5 @@ export const FAQSection = () => {
     </section>
   );
 };
+
+import { Check } from "lucide-react";
