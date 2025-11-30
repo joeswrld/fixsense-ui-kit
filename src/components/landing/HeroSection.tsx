@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import heroBg from "@/assets/hero-bg.jpg";
 import { Sparkles, ShieldCheck, TrendingUp, ArrowRight, Play } from "lucide-react";
 import { useState } from "react";
 
@@ -9,27 +8,23 @@ export const HeroSection = () => {
 
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
-      {/* Background Elements */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center opacity-10"
-        style={{ backgroundImage: `url(${heroBg})` }}
-      />
+      {/* Background Elements - Removed heroBg dependency */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5" />
       
       {/* Animated Background Blobs */}
       <div className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute bottom-20 right-10 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse delay-1000" />
+      <div className="absolute bottom-20 right-10 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
       
       <div className="container relative z-10 px-4 py-16 md:py-24">
         <div className="max-w-4xl mx-auto text-center space-y-8">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-card/80 backdrop-blur-sm animate-fade-in">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-card/80 backdrop-blur-sm">
             <Sparkles className="w-4 h-4 text-primary animate-pulse" />
             <span className="text-sm font-medium">AI-Powered Diagnostics for Smart Hosts</span>
           </div>
 
           {/* Main Heading */}
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight animate-fade-in-up">
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight">
             AI Diagnostics for{" "}
             <span className="bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
               Airbnb
@@ -41,13 +36,13 @@ export const HeroSection = () => {
           </h1>
 
           {/* Subheading */}
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed animate-fade-in-up delay-200">
+          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             Upload a video, audio, or photo and get instant repair diagnosis and cost estimate. 
             Save time, avoid scams, and keep your properties running smoothly.
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4 animate-fade-in-up delay-300">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
             <Button size="lg" asChild className="min-w-[200px] group shadow-xl hover:shadow-2xl transition-all">
               <Link to="/auth">
                 Sign Up Free
@@ -66,7 +61,7 @@ export const HeroSection = () => {
           </div>
 
           {/* Trust Indicators */}
-          <div className="flex flex-wrap justify-center gap-8 pt-8 text-sm animate-fade-in-up delay-500">
+          <div className="flex flex-wrap justify-center gap-8 pt-8 text-sm">
             <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-card/50 backdrop-blur-sm border border-border/50">
               <ShieldCheck className="w-5 h-5 text-green-500" />
               <span className="font-medium">Scam Protection</span>
@@ -82,7 +77,7 @@ export const HeroSection = () => {
           </div>
 
           {/* Social Proof */}
-          <div className="pt-8 animate-fade-in-up delay-700">
+          <div className="pt-8">
             <p className="text-sm text-muted-foreground mb-4">Trusted by property managers worldwide</p>
             <div className="flex justify-center items-center gap-2">
               <div className="flex -space-x-2">
@@ -117,53 +112,6 @@ export const HeroSection = () => {
           </div>
         </div>
       )}
-
-      {/* Custom CSS for animations */}
-      <style>{`
-        @keyframes fade-in {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes fade-in-up {
-          from { 
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to { 
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.6s ease-out;
-        }
-        .animate-fade-in-up {
-          animation: fade-in-up 0.6s ease-out;
-        }
-        .delay-200 {
-          animation-delay: 0.2s;
-          opacity: 0;
-          animation-fill-mode: forwards;
-        }
-        .delay-300 {
-          animation-delay: 0.3s;
-          opacity: 0;
-          animation-fill-mode: forwards;
-        }
-        .delay-500 {
-          animation-delay: 0.5s;
-          opacity: 0;
-          animation-fill-mode: forwards;
-        }
-        .delay-700 {
-          animation-delay: 0.7s;
-          opacity: 0;
-          animation-fill-mode: forwards;
-        }
-        .delay-1000 {
-          animation-delay: 1s;
-        }
-      `}</style>
     </section>
   );
 };
