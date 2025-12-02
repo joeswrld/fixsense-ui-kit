@@ -23,18 +23,37 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) throw error;
 
-      toast({
-        title: "Welcome back!",
-        description: "You've successfully signed in.",
-      });
-      navigate("/dashboard");
+      // Get user role and redirect accordingly
+      if (data.user) {
+        const { data: roleData } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", data.user.id)
+          .order("role", { ascending: true })
+          .limit(1)
+          .single();
+
+        const role = roleData?.role || "free";
+
+        toast({
+          title: "Welcome back!",
+          description: "You've successfully signed in.",
+        });
+
+        // Redirect based on role
+        if (role === "admin") {
+          navigate("/admin/users");
+        } else {
+          navigate("/dashboard");
+        }
+      }
     } catch (error: any) {
       toast({
         title: "Error",
