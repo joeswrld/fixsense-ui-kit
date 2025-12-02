@@ -88,6 +88,7 @@ export type Database = {
           probable_causes: string[] | null
           property_id: string | null
           scam_alerts: string[] | null
+          status: string | null
           urgency: string | null
           user_id: string
         }
@@ -105,6 +106,7 @@ export type Database = {
           probable_causes?: string[] | null
           property_id?: string | null
           scam_alerts?: string[] | null
+          status?: string | null
           urgency?: string | null
           user_id: string
         }
@@ -122,6 +124,7 @@ export type Database = {
           probable_causes?: string[] | null
           property_id?: string | null
           scam_alerts?: string[] | null
+          status?: string | null
           urgency?: string | null
           user_id?: string
         }
@@ -281,15 +284,20 @@ export type Database = {
       }
       profiles: {
         Row: {
+          country: string | null
           created_at: string
+          currency: string | null
           current_period_end: string | null
           current_period_start: string | null
           diagnostics_used_this_month: number | null
           email: string | null
           full_name: string | null
           id: string
+          last_payment_date: string | null
           monthly_usage_limits: Json | null
           notification_preferences: Json | null
+          onboarding_completed: boolean | null
+          payment_required: boolean | null
           paystack_customer_code: string | null
           paystack_subscription_code: string | null
           phone: string | null
@@ -298,17 +306,23 @@ export type Database = {
           subscription_status: string | null
           subscription_tier: string | null
           updated_at: string
+          user_type: string | null
         }
         Insert: {
+          country?: string | null
           created_at?: string
+          currency?: string | null
           current_period_end?: string | null
           current_period_start?: string | null
           diagnostics_used_this_month?: number | null
           email?: string | null
           full_name?: string | null
           id: string
+          last_payment_date?: string | null
           monthly_usage_limits?: Json | null
           notification_preferences?: Json | null
+          onboarding_completed?: boolean | null
+          payment_required?: boolean | null
           paystack_customer_code?: string | null
           paystack_subscription_code?: string | null
           phone?: string | null
@@ -317,17 +331,23 @@ export type Database = {
           subscription_status?: string | null
           subscription_tier?: string | null
           updated_at?: string
+          user_type?: string | null
         }
         Update: {
+          country?: string | null
           created_at?: string
+          currency?: string | null
           current_period_end?: string | null
           current_period_start?: string | null
           diagnostics_used_this_month?: number | null
           email?: string | null
           full_name?: string | null
           id?: string
+          last_payment_date?: string | null
           monthly_usage_limits?: Json | null
           notification_preferences?: Json | null
+          onboarding_completed?: boolean | null
+          payment_required?: boolean | null
           paystack_customer_code?: string | null
           paystack_subscription_code?: string | null
           phone?: string | null
@@ -336,6 +356,7 @@ export type Database = {
           subscription_status?: string | null
           subscription_tier?: string | null
           updated_at?: string
+          user_type?: string | null
         }
         Relationships: []
       }
@@ -363,6 +384,33 @@ export type Database = {
           name?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      rate_limiting: {
+        Row: {
+          created_at: string | null
+          endpoint: string
+          id: string
+          identifier: string
+          request_count: number | null
+          window_start: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          endpoint: string
+          id?: string
+          identifier: string
+          request_count?: number | null
+          window_start?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          endpoint?: string
+          id?: string
+          identifier?: string
+          request_count?: number | null
+          window_start?: string | null
         }
         Relationships: []
       }
@@ -718,9 +766,11 @@ export type Database = {
           audio_usage: number | null
           current_period_end: string | null
           current_period_start: string | null
-          email: string | null
+          payment_required: boolean | null
           photo_limit: number | null
           photo_usage: number | null
+          subscription_end_date: string | null
+          subscription_status: string | null
           subscription_tier: string | null
           text_limit: number | null
           text_usage: number | null
@@ -737,6 +787,17 @@ export type Database = {
         Args: { p_input_type: string; p_user_id: string }
         Returns: boolean
       }
+      check_paid_user_renewals: { Args: never; Returns: undefined }
+      check_rate_limit: {
+        Args: {
+          p_endpoint: string
+          p_identifier: string
+          p_max_requests: number
+          p_window_minutes: number
+        }
+        Returns: boolean
+      }
+      cleanup_rate_limiting: { Args: never; Returns: undefined }
       get_monthly_usage: {
         Args: { p_user_id: string }
         Returns: {
@@ -753,8 +814,14 @@ export type Database = {
           total_services: number
         }[]
       }
+      reset_free_user_usage: { Args: never; Returns: undefined }
       reset_monthly_usage: { Args: never; Returns: undefined }
       reset_monthly_usage_with_log: { Args: never; Returns: undefined }
+      reset_paid_user_usage: { Args: { p_user_id: string }; Returns: undefined }
+      update_user_country: {
+        Args: { p_country_code: string; p_user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
