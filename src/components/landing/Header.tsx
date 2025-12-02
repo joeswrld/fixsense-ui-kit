@@ -120,23 +120,41 @@ export const Header = () => {
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-6">
-          <Link 
-            to="/features" 
+        <nav className="hidden lg:flex items-center gap-6">
+          <a 
+            href="#features" 
             className="text-sm font-medium hover:text-primary transition-colors"
           >
             Features
-          </Link>
-          <Link 
-            to="/pricing" 
+          </a>
+          <a 
+            href="#how-it-works" 
+            className="text-sm font-medium hover:text-primary transition-colors"
+          >
+            How It Works
+          </a>
+          <a 
+            href="#testimonials" 
+            className="text-sm font-medium hover:text-primary transition-colors"
+          >
+            Success Stories
+          </a>
+          <a 
+            href="#pricing" 
             className="text-sm font-medium hover:text-primary transition-colors"
           >
             Pricing
-          </Link>
+          </a>
+          <a 
+            href="#faq" 
+            className="text-sm font-medium hover:text-primary transition-colors"
+          >
+            FAQ
+          </a>
         </nav>
 
         {/* Desktop Auth Section */}
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden lg:flex items-center gap-3">
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -192,7 +210,7 @@ export const Header = () => {
         </div>
 
         {/* Mobile Menu Button */}
-        <div className="md:hidden">
+        <div className="lg:hidden">
           <Button
             variant="ghost"
             size="sm"
@@ -210,22 +228,43 @@ export const Header = () => {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t bg-background">
+        <div className="lg:hidden border-t bg-background">
           <nav className="container px-4 py-4 space-y-3">
-            <Link
-              to="/features"
+            <a
+              href="#features"
               className="block py-2 text-sm font-medium hover:text-primary transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               Features
-            </Link>
-            <Link
-              to="/pricing"
+            </a>
+            <a
+              href="#how-it-works"
+              className="block py-2 text-sm font-medium hover:text-primary transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              How It Works
+            </a>
+            <a
+              href="#testimonials"
+              className="block py-2 text-sm font-medium hover:text-primary transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Success Stories
+            </a>
+            <a
+              href="#pricing"
               className="block py-2 text-sm font-medium hover:text-primary transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               Pricing
-            </Link>
+            </a>
+            <a
+              href="#faq"
+              className="block py-2 text-sm font-medium hover:text-primary transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              FAQ
+            </a>
             
             <div className="pt-3 border-t space-y-2">
               {user ? (

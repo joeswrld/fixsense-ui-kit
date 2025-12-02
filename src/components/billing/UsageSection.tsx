@@ -53,7 +53,7 @@ const plans = [
   },
   {
     name: "Host Business",
-    price: 880000,
+    price: 1430000,
     tier: "business",
     features: [
       "60 photo diagnostics per month",
