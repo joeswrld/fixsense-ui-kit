@@ -27,7 +27,7 @@ const AdminSubscriptions = () => {
       const business = profiles?.filter(p => p.subscription_tier === "business" && p.subscription_status === "active").length || 0;
 
       // Assuming pro = ₦5,300/month, business = ₦14,300/month
-      const mrr = (pro * 5,300) + (business * 14,300);
+      const mrr = (pro * 5300) + (business * 14300);
 
       return { free, pro, business, mrr, total: profiles?.length || 0 };
     },
@@ -82,7 +82,7 @@ const AdminSubscriptions = () => {
               <CardContent>
                 <div className="text-2xl font-bold">{stats?.pro}</div>
                 <p className="text-xs text-muted-foreground">
-                  ${(stats?.pro || 0) * 29}/month
+                  ₦{((stats?.pro || 0) * 5300).toLocaleString()}/month
                 </p>
               </CardContent>
             </Card>
@@ -95,7 +95,7 @@ const AdminSubscriptions = () => {
               <CardContent>
                 <div className="text-2xl font-bold">{stats?.business}</div>
                 <p className="text-xs text-muted-foreground">
-                  ₦{(stats?.business || 0) * 99}/month
+                  ₦{((stats?.business || 0) * 14300).toLocaleString()}/month
                 </p>
               </CardContent>
             </Card>
@@ -108,7 +108,7 @@ const AdminSubscriptions = () => {
               <CardContent>
                 <div className="text-2xl font-bold">{stats?.free}</div>
                 <p className="text-xs text-muted-foreground">
-                  Potential revenue: ₦{(stats?.free || 0) * 29}/mo
+                  Potential revenue: ₦{((stats?.free || 0) * 5300).toLocaleString()}/mo
                 </p>
               </CardContent>
             </Card>
@@ -149,7 +149,7 @@ const AdminSubscriptions = () => {
                         <Badge>{transaction.plan}</Badge>
                       </TableCell>
                       <TableCell className="font-medium">
-                        {transaction.amount ? `₦{(transaction.amount / 100).toFixed(2)}` : "—"}
+                        {transaction.amount ? `₦${(transaction.amount / 100).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
                       </TableCell>
                       <TableCell>
                         <Badge 
