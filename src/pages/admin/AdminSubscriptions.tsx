@@ -39,11 +39,24 @@ const AdminSubscriptions = () => {
       const { data, error } = await supabase
         .from("transaction_summary")
         .select("*")
-        .order("created_at", { ascending: false })
-        .limit(50);
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data;
+      
+      // Get the most recent transaction for each user
+      const userTransactionsMap = new Map();
+      data?.forEach((transaction) => {
+        const userId = transaction.user_id || transaction.user_email;
+        if (!userTransactionsMap.has(userId)) {
+          userTransactionsMap.set(userId, transaction);
+        }
+      });
+      
+      // Convert map back to array and sort by date
+      const uniqueTransactions = Array.from(userTransactionsMap.values())
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      
+      return uniqueTransactions;
     },
   });
 
@@ -117,7 +130,7 @@ const AdminSubscriptions = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Recent Transactions</CardTitle>
+            <CardTitle>Recent Transactions (One per User)</CardTitle>
           </CardHeader>
           <CardContent>
             {transactionsLoading ? (
