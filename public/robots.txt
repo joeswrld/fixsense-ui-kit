@@ -1,14 +1,14 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
+# Allow all robots
 User-agent: *
 Allow: /
+
+# Disallow admin and private areas
+Disallow: /admin/
+Disallow: /settings
+Disallow: /result/
+Disallow: /history
+Disallow: /calendar
+Disallow: /properties
+
+# Sitemap location
+Sitemap: https://fixsense.com.ng/sitemap.xml
