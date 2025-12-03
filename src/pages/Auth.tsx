@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,21 @@ const Auth = () => {
   const [resetEmail, setResetEmail] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Check if this is a password recovery redirect
+    const checkPasswordRecovery = () => {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const type = hashParams.get('type');
+      
+      if (type === 'recovery') {
+        // Redirect to reset password page
+        navigate('/reset-password');
+      }
+    };
+
+    checkPasswordRecovery();
+  }, [navigate]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,9 +135,18 @@ const Auth = () => {
       setResetEmail("");
       setShowForgotPassword(false);
     } catch (error: any) {
+      console.error("Password reset error:", error);
+      
+      let errorMessage = error.message || "Failed to send reset email. Please try again.";
+      
+      // Handle network errors specifically
+      if (error.message?.includes("Failed to fetch") || error.message?.includes("network")) {
+        errorMessage = "Network error. Please check your internet connection and try again.";
+      }
+      
       toast({
         title: "Error",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
