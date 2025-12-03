@@ -46,13 +46,36 @@ const AdminSubscriptions = () => {
   const { data: transactions, isLoading: transactionsLoading } = useQuery({
     queryKey: ["admin-transactions"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Fetch from transaction_summary
+      const { data: summaryData, error: summaryError } = await supabase
         .from("transaction_summary")
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      return data;
+      if (summaryError) console.error("Error fetching transaction_summary:", summaryError);
+
+      // Fetch from transactions table
+      const { data: transactionsData, error: transactionsError } = await supabase
+        .from("transactions")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (transactionsError) console.error("Error fetching transactions:", transactionsError);
+
+      // Combine both datasets and add source identifier
+      const combined = [
+        ...(summaryData || []).map(t => ({ ...t, source: 'summary' })),
+        ...(transactionsData || []).map(t => ({ ...t, source: 'transactions' }))
+      ];
+
+      // Sort by created_at descending
+      combined.sort((a, b) => {
+        const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return dateB - dateA;
+      });
+
+      return combined;
     },
   });
 
@@ -151,6 +174,9 @@ const AdminSubscriptions = () => {
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="w-5 h-5" />
                 Transaction History
+                <Badge variant="outline" className="text-xs">
+                  {filteredTransactions?.length || 0} records
+                </Badge>
               </CardTitle>
               <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
                 <div className="grid grid-cols-2 gap-4 w-full sm:w-auto">
@@ -202,7 +228,7 @@ const AdminSubscriptions = () => {
                   </TableHeader>
                   <TableBody>
                     {filteredTransactions?.map((transaction) => (
-                      <TableRow key={transaction.id}>
+                      <TableRow key={`${transaction.source}-${transaction.id}`}>
                         <TableCell>
                           <div className="text-sm">
                             <div className="font-medium truncate max-w-[180px]">{transaction.user_email}</div>
