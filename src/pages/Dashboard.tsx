@@ -9,7 +9,7 @@ import { Wrench, FileSearch, Home, LogOut, Upload, History, Building2, DollarSig
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { MaintenanceCostWidget } from "@/components/dashboard/MaintenanceCostWidget";
-import { useCurrency } from "@/hooks/useCurrency";
+import { calculateEstimatedSavings } from "@/lib/countrySavingsEstimate";
 
 interface Diagnostic {
   id: string;
@@ -33,6 +33,7 @@ interface MaintenanceReminder {
 interface Profile {
   subscription_tier: string;
   subscription_status: string;
+  country: string | null;
 }
 
 const Dashboard = () => {
@@ -44,11 +45,10 @@ const Dashboard = () => {
   const [stats, setStats] = useState({
     totalDiagnostics: 0,
     scamAlertsSaved: 0,
-    estimatedSavings: 0,
+    estimatedSavings: "",
   });
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { format: formatCurrency } = useCurrency();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -78,7 +78,7 @@ const Dashboard = () => {
       // Fetch user profile for subscription info
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .select("subscription_tier, subscription_status")
+        .select("subscription_tier, subscription_status, country")
         .eq("id", userId)
         .single();
 
@@ -104,13 +104,14 @@ const Dashboard = () => {
       const totalDiagnostics = diagnosticsData?.length || 0;
       const diagnosticsWithScamAlerts = diagnosticsData?.filter(d => d.scam_alerts && d.scam_alerts.length > 0).length || 0;
       
-      // Estimate savings: assume each scam alert saved $200 on average
-      const estimatedSavings = diagnosticsWithScamAlerts * 200;
+      // Calculate country-specific savings
+      const userCountry = profileData?.country || "NG";
+      const savingsData = calculateEstimatedSavings(diagnosticsWithScamAlerts, userCountry);
 
       setStats({
         totalDiagnostics,
         scamAlertsSaved: diagnosticsWithScamAlerts,
-        estimatedSavings,
+        estimatedSavings: savingsData.formatted,
       });
 
       // Fetch maintenance reminders (appliances needing maintenance soon)
@@ -320,8 +321,8 @@ const Dashboard = () => {
             <Card>
               <CardHeader className="pb-3">
                 <CardDescription>Estimated Savings</CardDescription>
-                <CardTitle className="text-3xl flex items-center gap-2 text-primary">
-                  {formatCurrency(stats.estimatedSavings)}
+                <CardTitle className="text-2xl sm:text-3xl flex items-center gap-2 text-primary">
+                  {stats.estimatedSavings}
                 </CardTitle>
               </CardHeader>
               <CardContent>
