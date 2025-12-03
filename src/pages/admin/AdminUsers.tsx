@@ -26,9 +26,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, MoreVertical, Loader2 } from "lucide-react";
+import { Search, MoreVertical, Loader2, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { exportToCSV, userExportColumns } from "@/lib/csvExport";
 
 type UserWithRole = {
   id: string;
@@ -181,16 +182,31 @@ const AdminUsers = () => {
 
   const countries = [...new Set(users?.map(u => u.country).filter(Boolean))];
 
+  const handleExportCSV = () => {
+    if (!users || users.length === 0) {
+      toast({ title: "No data to export", variant: "destructive" });
+      return;
+    }
+    exportToCSV(users, userExportColumns, "fixsense_users");
+    toast({ title: "Users exported successfully" });
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">User Management</h1>
-          <p className="text-muted-foreground">Manage all users and their subscriptions</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold">User Management</h1>
+            <p className="text-muted-foreground text-sm sm:text-base">Manage all users and their subscriptions</p>
+          </div>
+          <Button onClick={handleExportCSV} variant="outline" className="w-full sm:w-auto">
+            <Download className="w-4 h-4 mr-2" />
+            Export CSV
+          </Button>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="sm:col-span-2 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder="Search by email or name..."
@@ -200,7 +216,7 @@ const AdminUsers = () => {
             />
           </div>
           <Select value={planFilter} onValueChange={setPlanFilter}>
-            <SelectTrigger className="w-full md:w-[180px]">
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Filter by plan" />
             </SelectTrigger>
             <SelectContent>
@@ -211,7 +227,7 @@ const AdminUsers = () => {
             </SelectContent>
           </Select>
           <Select value={countryFilter} onValueChange={setCountryFilter}>
-            <SelectTrigger className="w-full md:w-[180px]">
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Filter by country" />
             </SelectTrigger>
             <SelectContent>
@@ -225,7 +241,7 @@ const AdminUsers = () => {
           </Select>
         </div>
 
-        <div className="border rounded-lg">
+        <div className="border rounded-lg overflow-x-auto">
           {isLoading ? (
             <div className="flex items-center justify-center p-8">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -234,13 +250,13 @@ const AdminUsers = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Country</TableHead>
+                  <TableHead className="min-w-[200px]">User</TableHead>
+                  <TableHead className="hidden md:table-cell">Contact</TableHead>
+                  <TableHead className="hidden lg:table-cell">Country</TableHead>
                   <TableHead>Plan</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Joined</TableHead>
+                  <TableHead className="hidden sm:table-cell">Status</TableHead>
+                  <TableHead className="hidden lg:table-cell">Role</TableHead>
+                  <TableHead className="hidden md:table-cell">Joined</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -250,17 +266,17 @@ const AdminUsers = () => {
                     <TableCell>
                       <div>
                         <div className="font-medium">{user.full_name || "No name"}</div>
-                        <div className="text-sm text-muted-foreground">{user.email}</div>
+                        <div className="text-sm text-muted-foreground truncate max-w-[180px]">{user.email}</div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm">{user.phone || "—"}</TableCell>
-                    <TableCell>{user.country || "—"}</TableCell>
+                    <TableCell className="hidden md:table-cell text-sm">{user.phone || "—"}</TableCell>
+                    <TableCell className="hidden lg:table-cell">{user.country || "—"}</TableCell>
                     <TableCell>
                       <Badge variant={user.subscription_tier === "free" ? "secondary" : "default"}>
                         {user.subscription_tier}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       <Badge 
                         variant={
                           user.subscription_status === "active" ? "default" :
@@ -271,12 +287,12 @@ const AdminUsers = () => {
                         {user.subscription_status}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden lg:table-cell">
                       <Badge variant={user.role === "admin" ? "destructive" : "outline"}>
                         {user.role}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-sm">
+                    <TableCell className="hidden md:table-cell text-sm">
                       {format(new Date(user.created_at), "MMM d, yyyy")}
                     </TableCell>
                     <TableCell className="text-right">

@@ -1,11 +1,40 @@
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import heroBg from "@/assets/hero-bg.jpg";
 import { Sparkles, ShieldCheck, TrendingUp, ArrowRight, Play } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { User } from "@supabase/supabase-js";
 
 export const HeroSection = () => {
   const [videoOpen, setVideoOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check if user is logged in
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user ?? null);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleGetStarted = () => {
+    if (user) {
+      // Logged-in users go directly to dashboard
+      navigate("/dashboard");
+    } else {
+      // Non-logged-in users go to auth
+      navigate("/auth");
+    }
+  };
 
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
@@ -48,11 +77,13 @@ export const HeroSection = () => {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4 animate-fade-in-up delay-300">
-            <Button size="lg" asChild className="min-w-[200px] group shadow-xl hover:shadow-2xl transition-all">
-              <Link to="/auth">
-                Sign Up Free
-                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </Link>
+            <Button 
+              size="lg" 
+              className="min-w-[200px] group shadow-xl hover:shadow-2xl transition-all"
+              onClick={handleGetStarted}
+            >
+              {user ? "Go to Dashboard" : "Sign Up Free"}
+              <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Button>
             <Button 
               size="lg" 
@@ -66,16 +97,16 @@ export const HeroSection = () => {
           </div>
 
           {/* Trust Indicators */}
-          <div className="flex flex-wrap justify-center gap-8 pt-8 text-sm animate-fade-in-up delay-500">
-            <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-card/50 backdrop-blur-sm border border-border/50">
+          <div className="flex flex-wrap justify-center gap-4 md:gap-8 pt-8 text-sm animate-fade-in-up delay-500">
+            <div className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg bg-card/50 backdrop-blur-sm border border-border/50">
               <ShieldCheck className="w-5 h-5 text-green-500" />
               <span className="font-medium">Scam Protection</span>
             </div>
-            <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-card/50 backdrop-blur-sm border border-border/50">
+            <div className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg bg-card/50 backdrop-blur-sm border border-border/50">
               <TrendingUp className="w-5 h-5 text-blue-500" />
               <span className="font-medium">Cost Estimates</span>
             </div>
-            <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-card/50 backdrop-blur-sm border border-border/50">
+            <div className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg bg-card/50 backdrop-blur-sm border border-border/50">
               <Sparkles className="w-5 h-5 text-purple-500" />
               <span className="font-medium">Instant Analysis</span>
             </div>
@@ -89,7 +120,7 @@ export const HeroSection = () => {
                 {[1, 2, 3, 4, 5].map((i) => (
                   <div 
                     key={i}
-                    className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-purple-500 border-2 border-background flex items-center justify-center text-xs font-bold text-white"
+                    className="w-8 md:w-10 h-8 md:h-10 rounded-full bg-gradient-to-br from-primary to-purple-500 border-2 border-background flex items-center justify-center text-xs font-bold text-white"
                   >
                     {String.fromCharCode(64 + i)}
                   </div>
