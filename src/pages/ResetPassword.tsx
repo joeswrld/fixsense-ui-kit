@@ -22,11 +22,33 @@ const ResetPassword = () => {
   useEffect(() => {
     // Check if user has a valid recovery session
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session) {
-        setIsValidSession(true);
-      } else {
+      try {
+        // Check for hash fragment (password recovery)
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        const type = hashParams.get('type');
+
+        if (accessToken && type === 'recovery') {
+          // Valid password recovery link
+          setIsValidSession(true);
+          return;
+        }
+
+        // Fallback: check existing session
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          setIsValidSession(true);
+        } else {
+          toast({
+            title: "Invalid or expired link",
+            description: "Please request a new password reset link.",
+            variant: "destructive",
+          });
+          setTimeout(() => navigate("/auth"), 3000);
+        }
+      } catch (error) {
+        console.error("Session check error:", error);
         toast({
           title: "Invalid or expired link",
           description: "Please request a new password reset link.",
