@@ -19,6 +19,7 @@ import VendorCalendar from "./pages/VendorCalendar";
 import Calendar from "./pages/Calendar";
 import NotFound from "./pages/NotFound";
 import Unauthorized from "./pages/Unauthorized";
+import ResetPassword from "./pages/ResetPassword";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
 import AdminUsers from "./pages/admin/AdminUsers";
@@ -40,6 +41,7 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           
           {/* Onboarding route - only accessible when not completed */}
           <Route path="/onboarding" element={<Onboarding />} />
