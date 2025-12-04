@@ -2,10 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, TrendingUp, DollarSign, Activity, Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Users, TrendingUp, DollarSign, Activity, Loader2, Radio } from "lucide-react";
 import { format, subDays, startOfMonth, endOfMonth } from "date-fns";
+import { useRealtimeStats } from "@/hooks/useRealtimeStats";
 
 const AdminAnalytics = () => {
+  const realtimeStats = useRealtimeStats();
+  
   const { data: analytics, isLoading } = useQuery({
     queryKey: ["admin-analytics"],
     queryFn: async () => {
@@ -92,9 +96,15 @@ const AdminAnalytics = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
-          <p className="text-muted-foreground">Monitor key metrics and growth</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
+            <p className="text-muted-foreground">Monitor key metrics and growth</p>
+          </div>
+          <Badge variant="outline" className="flex items-center gap-2 w-fit">
+            <Radio className="w-3 h-3 text-green-500 animate-pulse" />
+            Live: {realtimeStats.userCount} users, {realtimeStats.transactionCount} transactions
+          </Badge>
         </div>
 
         {isLoading ? (

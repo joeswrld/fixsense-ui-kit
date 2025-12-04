@@ -98,24 +98,24 @@ const Landing = () => {
               <h3 className="font-semibold mb-4">Company</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>
-                  <a href="#" className="hover:text-primary transition-colors">
+                  <Link to="/about" className="hover:text-primary transition-colors">
                     About Us
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-primary transition-colors">
+                  <Link to="/contact" className="hover:text-primary transition-colors">
                     Contact
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-primary transition-colors">
+                  <Link to="/privacy" className="hover:text-primary transition-colors">
                     Privacy Policy
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-primary transition-colors">
+                  <Link to="/terms" className="hover:text-primary transition-colors">
                     Terms of Service
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -124,7 +124,7 @@ const Landing = () => {
           {/* Bottom Bar */}
           <div className="pt-8 border-t text-center text-sm text-muted-foreground">
             <p>&copy; {new Date().getFullYear()} FixSense. All rights reserved.</p>
-            <p className="mt-2">Made with ❤️ for property managers and Airbnb hosts</p>
+            <p className="mt-2">Powered by Google Gemini AI</p>
           </div>
         </div>
       </footer>

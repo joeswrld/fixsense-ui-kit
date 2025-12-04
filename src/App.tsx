@@ -20,6 +20,10 @@ import Calendar from "./pages/Calendar";
 import NotFound from "./pages/NotFound";
 import Unauthorized from "./pages/Unauthorized";
 import ResetPassword from "./pages/ResetPassword";
+import AboutUs from "./pages/AboutUs";
+import Contact from "./pages/Contact";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
 import AdminUsers from "./pages/admin/AdminUsers";
@@ -42,6 +46,10 @@ const App = () => (
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/about" element={<AboutUs />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
           
           {/* Onboarding route - only accessible when not completed */}
           <Route path="/onboarding" element={<Onboarding />} />
