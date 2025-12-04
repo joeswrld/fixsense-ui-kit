@@ -231,7 +231,7 @@ const AdminSubscriptions = () => {
                       <TableRow key={`${transaction.source}-${transaction.id}`}>
                         <TableCell>
                           <div className="text-sm">
-                            <div className="font-medium truncate max-w-[180px]">{transaction.user_email}</div>
+                            <div className="font-medium truncate max-w-[180px]">{'user_email' in transaction ? transaction.user_email : transaction.user_id}</div>
                             <div className="text-muted-foreground text-xs truncate max-w-[150px]">{transaction.reference}</div>
                           </div>
                         </TableCell>
