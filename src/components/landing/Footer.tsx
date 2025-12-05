@@ -1,7 +1,11 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Wrench } from "lucide-react";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export const Footer = () => {
+  const { t } = useTranslation();
+
   return (
     <footer className="border-t bg-muted/30">
       <div className="container px-4 py-12">
@@ -21,16 +25,16 @@ export const Footer = () => {
 
           {/* Company */}
           <div>
-            <h3 className="font-semibold mb-4">Company</h3>
+            <h3 className="font-semibold mb-4">{t('footer.company')}</h3>
             <ul className="space-y-2 text-sm">
               <li>
                 <Link to="/about" className="text-muted-foreground hover:text-primary transition-colors">
-                  About Us
+                  {t('footer.aboutUs')}
                 </Link>
               </li>
               <li>
                 <Link to="/contact" className="text-muted-foreground hover:text-primary transition-colors">
-                  Contact
+                  {t('footer.contact')}
                 </Link>
               </li>
               <li>
@@ -47,12 +51,12 @@ export const Footer = () => {
             <ul className="space-y-2 text-sm">
               <li>
                 <Link to="/privacy" className="text-muted-foreground hover:text-primary transition-colors">
-                  Privacy Policy
+                  {t('footer.privacyPolicy')}
                 </Link>
               </li>
               <li>
                 <Link to="/terms" className="text-muted-foreground hover:text-primary transition-colors">
-                  Terms of Service
+                  {t('footer.termsOfService')}
                 </Link>
               </li>
             </ul>
@@ -87,7 +91,8 @@ export const Footer = () => {
             © {new Date().getFullYear()} FixSense. All rights reserved.
           </p>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span>Powered by Google Gemini AI</span>
+            <LanguageSwitcher />
+            <span>{t('footer.poweredBy')}</span>
           </div>
         </div>
       </div>
