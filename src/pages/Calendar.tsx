@@ -42,6 +42,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useCurrency } from "@/hooks/useCurrency";
 import { User } from "@supabase/supabase-js";
+import { BusinessAccessGate } from "@/components/BusinessAccessGate";
 
 interface Profile {
   subscription_tier: string;
@@ -49,7 +50,7 @@ interface Profile {
   country: string | null;
 }
 
-const EnhancedCalendar = () => {
+const CalendarContent = () => {
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState(undefined);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -1037,5 +1038,12 @@ const EnhancedCalendar = () => {
     </div>
   );
 };
+const EnhancedCalendar = () => {
+  return (
+    <BusinessAccessGate featureName="Maintenance Calendar">
+      <CalendarContent />
+    </BusinessAccessGate>
+  );
+};
 
-export default EnhancedCalendar;
+export default CalendarContent;
