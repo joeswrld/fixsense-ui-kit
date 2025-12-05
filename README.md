@@ -1,73 +1,202 @@
-# Welcome to your Lovable project
+FixSense 🛠️🤖
+AI-Powered Appliance Diagnostics & Maintenance Intelligence
+FixSense is an AI-driven platform that helps property owners, hosts, and facilities managers diagnose appliance faults, estimate repair costs, and prevent future breakdowns — all before calling a technician.
+Built for real-world use in emerging and global markets, with local pricing intelligence and smart usage limits.
 
-## Project info
+🚀 What FixSense Does
 
-**URL**: https://lovable.dev/projects/fd865130-10ae-4aa8-a14b-e2e852d4b175
 
-## How can I edit this code?
+AI Diagnostics
 
-There are several ways of editing your application.
 
-**Use Lovable**
+Text Diagnostics
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/fd865130-10ae-4aa8-a14b-e2e852d4b175) and start prompting.
 
-Changes made via Lovable will be committed automatically to this repo.
+Photo Diagnostics
 
-**Use your preferred IDE**
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+Audio Diagnostics
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
-Follow these steps:
+Video Diagnostics
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
 
-# Step 3: Install the necessary dependencies.
-npm i
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+Estimated Repair Cost
 
-**Edit a file directly in GitHub**
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Country-aware pricing (not FX conversion tricks)
 
-**Use GitHub Codespaces**
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Based on common local labor & repair patterns
 
-## What technologies are used for this project?
 
-This project is built with:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
 
-## How can I deploy this project?
+Property Management
 
-Simply open [Lovable](https://lovable.dev/projects/fd865130-10ae-4aa8-a14b-e2e852d4b175) and click on Share -> Publish.
 
-## Can I connect a custom domain to my Lovable project?
+Track appliances across multiple properties
 
-Yes, you can!
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+Maintenance Intelligence (Business Plan)
+
+
+Maintenance timeline
+
+
+Service vendor directory
+
+
+AI predictive maintenance alerts
+
+
+Failure predictions & recommendations
+
+
+
+
+
+👥 Who It’s For
+
+
+Short-let / Airbnb hosts
+
+
+Property managers
+
+
+Facility managers
+
+
+Homeowners tired of guesswork
+
+
+Businesses managing multiple assets
+
+
+
+💳 Pricing Model
+FixSense uses subscription-based pricing with strict monthly usage limits to stay sustainable.
+PlanPrice (NGN)Best ForFree₦0Trying it outPro₦5,300 / monthActive hosts & individualsBusiness₦14,300 / monthProperty managers & companies
+✅ Payments processed only in NGN via Paystack
+✅ USD prices shown for reference only
+
+🧠 Technology Stack
+
+
+Frontend: React + TypeScript + Tailwind (ShadCN UI)
+
+
+Backend: Supabase (Auth, DB, Edge Functions)
+
+
+AI: Google Gemini API
+
+
+Payments: Paystack
+
+
+Hosting: Vercel
+
+
+Real-time: Supabase Realtime
+
+
+
+🔐 Authentication & Access Control
+
+
+Supabase Auth (Email / Password)
+
+
+Protected routes
+
+
+Role-based access:
+
+
+Free
+
+
+Pro
+
+
+Business
+
+
+Admin (internal)
+
+
+
+
+
+🧾 Usage Limits (Example)
+Each plan has monthly limits for:
+
+
+Photo Diagnostics
+
+
+Audio Diagnostics
+
+
+Video Diagnostics
+
+
+Text Diagnostics
+
+
+Properties Managed
+
+
+Usage resets monthly to control costs and keep pricing fair.
+
+
+
+
+📈 Why FixSense Exists
+Most people:
+
+
+Don’t know what’s wrong with their appliance
+
+
+Overpay technicians
+
+
+Fix things too late
+
+
+FixSense flips the script:
+✅ Diagnose first
+✅ Estimate cost
+✅ Decide smarter
+
+🧪 Current Status
+
+
+✅ Core diagnostics live
+
+
+✅ Billing system implemented
+
+
+✅ Pricing logic localized
+
+
+✅ Actively validating with real users
+
+
+Feedback is the top priority right now.
+
+📬 Feedback & Validation
+This product is currently being validated with early users.
+Brutally honest feedback is welcome.
+If it’s confusing, expensive, or useless — that’s valuable data.
+
+📄 License
+MIT License — open for iteration, closed for excuses.
