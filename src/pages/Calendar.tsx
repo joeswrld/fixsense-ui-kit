@@ -1038,7 +1038,8 @@ const CalendarContent = () => {
     </div>
   );
 };
-const EnhancedCalendar = () => {
+
+const Calendar = () => {
   return (
     <BusinessAccessGate featureName="Maintenance Calendar">
       <CalendarContent />
@@ -1046,4 +1047,4 @@ const EnhancedCalendar = () => {
   );
 };
 
-export default CalendarContent;
+export default Calendar; 
