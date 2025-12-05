@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { 
+  ArrowLeft,
   Loader2, 
   CheckCircle2, 
   Download, 
@@ -38,6 +40,7 @@ import { toast } from "sonner";
 import { useCurrency } from "@/hooks/useCurrency";
 
 const EnhancedCalendar = () => {
+  const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState(undefined);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showDialog, setShowDialog] = useState(false);
@@ -331,20 +334,27 @@ const EnhancedCalendar = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Maintenance Calendar
-            </h1>
-            <p className="text-slate-600">View scheduled and completed maintenance</p>
-          </div>
-          <Button className="bg-gradient-to-r from-blue-600 to-purple-600">
-            <Download className="w-4 h-4 mr-2" />
-            Export Calendar
-          </Button>
-        </div>
+    <main className="container px-4 py-8">
+      <div className="max-w-6xl mx-auto space-y-6">
+        <Button variant="ghost" onClick={() => navigate("/dashboard")}>
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Dashboard
+        </Button>
+
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8">
+          <div className="max-w-7xl mx-auto space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  Maintenance Calendar
+                </h1>
+                <p className="text-slate-600">View scheduled and completed maintenance</p>
+              </div>
+              <Button className="bg-gradient-to-r from-blue-600 to-purple-600">
+                <Download className="w-4 h-4 mr-2" />
+                Export Calendar
+              </Button>
+            </div>
 
         <div className="grid lg:grid-cols-2 gap-6">
           <Card className="shadow-lg">
