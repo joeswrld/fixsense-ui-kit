@@ -67,6 +67,12 @@ const EnhancedCalendar = () => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
 
+  // Schedule maintenance dialog states
+  const [showScheduleDialog, setShowScheduleDialog] = useState(false);
+  const [selectedAppliance, setSelectedAppliance] = useState("");
+  const [scheduledDate, setScheduledDate] = useState<Date | undefined>(undefined);
+  const [scheduleNotes, setScheduleNotes] = useState("");
+
   const queryClient = useQueryClient();
   const { format: formatCurrency, symbol } = useCurrency();
 
@@ -254,6 +260,42 @@ const EnhancedCalendar = () => {
     },
   });
 
+  // Fetch all appliances for scheduling
+  const { data: appliances = [] } = useQuery({
+    queryKey: ["user-appliances"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase
+        .from("appliances")
+        .select(`
+          id,
+          name,
+          type,
+          properties!inner (
+            id,
+            name,
+            user_id
+          )
+        `)
+        .eq("properties.user_id", user.id)
+        .order("name", { ascending: true });
+
+      if (error) throw error;
+      
+      return (data || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        type: item.type,
+        property: {
+          id: item.properties.id,
+          name: item.properties.name
+        }
+      }));
+    },
+  });
+
   // Upload photo to storage
   const uploadPhoto = async (file, applianceId) => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -365,6 +407,35 @@ const EnhancedCalendar = () => {
     },
   });
 
+  // Schedule new maintenance
+  const scheduleMutation = useMutation({
+    mutationFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { error } = await supabase
+        .from("appliances")
+        .update({ 
+          next_maintenance_date: format(scheduledDate!, "yyyy-MM-dd")
+        })
+        .eq("id", selectedAppliance);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["scheduled-maintenance"] });
+      queryClient.invalidateQueries({ queryKey: ["user-appliances"] });
+      toast.success("Maintenance scheduled successfully");
+      setShowScheduleDialog(false);
+      setSelectedAppliance("");
+      setScheduledDate(undefined);
+      setScheduleNotes("");
+    },
+    onError: () => {
+      toast.error("Failed to schedule maintenance");
+    },
+  });
+
   const handleReschedule = () => {
     if (!selectedEvent || !newDate) return;
     rescheduleMutation.mutate({ applianceId: selectedEvent.id, newDate });
@@ -380,6 +451,11 @@ const EnhancedCalendar = () => {
   const handleSaveCompletion = () => {
     if (!selectedEvent || !maintenanceType) return;
     completeMutation.mutate();
+  };
+
+  const handleScheduleMaintenance = () => {
+    if (!selectedAppliance || !scheduledDate) return;
+    scheduleMutation.mutate();
   };
 
   const getEventsForDate = (date) => {
@@ -468,10 +544,19 @@ const EnhancedCalendar = () => {
               </h1>
               <p className="text-slate-600">View scheduled and completed maintenance</p>
             </div>
-            <Button className="bg-gradient-to-r from-blue-600 to-purple-600">
-              <Download className="w-4 h-4 mr-2" />
-              Export Calendar
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline"
+                onClick={() => setShowScheduleDialog(true)}
+              >
+                <Calendar className="w-4 h-4 mr-2" />
+                Schedule Maintenance
+              </Button>
+              <Button className="bg-gradient-to-r from-blue-600 to-purple-600">
+                <Download className="w-4 h-4 mr-2" />
+                Export Calendar
+              </Button>
+            </div>
           </div>
 
           <div className="grid lg:grid-cols-2 gap-6">
@@ -851,6 +936,97 @@ const EnhancedCalendar = () => {
                     </>
                   ) : (
                     "Save & Complete"
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Schedule Maintenance Dialog */}
+          <Dialog open={showScheduleDialog} onOpenChange={setShowScheduleDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Schedule Maintenance</DialogTitle>
+                <DialogDescription>
+                  Set a maintenance date for an appliance
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="appliance">Select Appliance *</Label>
+                  <Select value={selectedAppliance} onValueChange={setSelectedAppliance}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose an appliance" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {appliances.map((appliance) => (
+                        <SelectItem key={appliance.id} value={appliance.id}>
+                          {appliance.name} ({appliance.property.name}) - {appliance.type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Maintenance Date *</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !scheduledDate && "text-slate-500"
+                        )}
+                      >
+                        <Calendar className="mr-2 h-4 w-4" />
+                        {scheduledDate ? format(scheduledDate, "PPP") : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={scheduledDate}
+                        onSelect={setScheduledDate}
+                        initialFocus
+                        disabled={(date) => date < new Date()}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="schedule-notes">Notes (Optional)</Label>
+                  <Textarea
+                    id="schedule-notes"
+                    placeholder="Add any notes about this scheduled maintenance..."
+                    value={scheduleNotes}
+                    onChange={(e) => setScheduleNotes(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowScheduleDialog(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleScheduleMaintenance}
+                  disabled={!selectedAppliance || !scheduledDate || scheduleMutation.isPending}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600"
+                >
+                  {scheduleMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Scheduling...
+                    </>
+                  ) : (
+                    <>
+                      <Calendar className="w-4 h-4 mr-2" />
+                      Schedule
+                    </>
                   )}
                 </Button>
               </DialogFooter>
