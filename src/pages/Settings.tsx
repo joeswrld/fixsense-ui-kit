@@ -1,18 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Loader2, Save } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NotificationPreferences } from "@/components/settings/NotificationPreferences";
 import { GDPRSettings } from "@/components/settings/GDPRSettings";
-import { BillingManagement }from "@/components/billing/BillingManagement";
+import { BillingManagement } from "@/components/billing/BillingManagement";
 import { AppHeader } from "@/components/AppHeader";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { languages } from "@/i18n/config";
 
 const COUNTRIES = [
   { code: "NG", name: "Nigeria", dialCode: "+234" },
@@ -31,6 +33,8 @@ const COUNTRIES = [
   { code: "FR", name: "France", dialCode: "+33" },
   { code: "BR", name: "Brazil", dialCode: "+55" },
   { code: "MX", name: "Mexico", dialCode: "+52" },
+  { code: "ES", name: "Spain", dialCode: "+34" },
+  { code: "PT", name: "Portugal", dialCode: "+351" },
 ].sort((a, b) => a.name.localeCompare(b.name));
 
 const CURRENCIES = [
@@ -45,16 +49,19 @@ const CURRENCIES = [
   { code: "GHS", symbol: "₵", name: "Ghanaian Cedi" },
   { code: "INR", symbol: "₹", name: "Indian Rupee" },
   { code: "AED", symbol: "د.إ", name: "UAE Dirham" },
+  { code: "BRL", symbol: "R$", name: "Brazilian Real" },
+  { code: "MXN", symbol: "$", name: "Mexican Peso" },
 ].sort((a, b) => a.name.localeCompare(b.name));
 
 const Settings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t, i18n } = useTranslation();
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "profile");
   
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   const [profileData, setProfileData] = useState({
     fullName: "",
     email: "",
@@ -74,6 +81,39 @@ const Settings = () => {
     fetchProfile();
   }, []);
 
+  // Real-time subscription for profile updates
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = supabase
+      .channel('profile-settings-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${userId}`,
+        },
+        (payload) => {
+          console.log('Realtime profile update:', payload);
+          const newData = payload.new;
+          setProfileData({
+            fullName: newData.full_name || "",
+            email: newData.email || "",
+            phone: newData.phone || "",
+            country: newData.country || "",
+            currency: newData.currency || "",
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
+
   const fetchProfile = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -81,6 +121,8 @@ const Settings = () => {
         navigate("/auth");
         return;
       }
+
+      setUserId(user.id);
 
       const { data: profile, error } = await supabase
         .from("profiles")
@@ -100,7 +142,7 @@ const Settings = () => {
     } catch (error) {
       console.error("Error fetching profile:", error);
       toast({
-        title: "Error",
+        title: t('common.error'),
         description: "Failed to load profile data",
         variant: "destructive",
       });
@@ -109,38 +151,39 @@ const Settings = () => {
     }
   };
 
-  const handleSaveProfile = async () => {
-    setSaving(true);
+  const updateField = useCallback(async (field: string, value: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
       const { error } = await supabase
         .from("profiles")
-        .update({
-          full_name: profileData.fullName,
-          phone: profileData.phone,
-          country: profileData.country,
-          currency: profileData.currency,
-        })
+        .update({ [field]: value })
         .eq("id", user.id);
 
       if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Profile updated successfully",
-      });
     } catch (error) {
-      console.error("Error updating profile:", error);
+      console.error("Error updating field:", error);
       toast({
-        title: "Error",
+        title: t('common.error'),
         description: "Failed to update profile",
         variant: "destructive",
       });
-    } finally {
-      setSaving(false);
     }
+  }, [toast, t]);
+
+  const handleFieldChange = (field: string, dbField: string, value: string) => {
+    setProfileData(prev => ({ ...prev, [field]: value }));
+    updateField(dbField, value);
+  };
+
+  const handleLanguageChange = (languageCode: string) => {
+    i18n.changeLanguage(languageCode);
+    localStorage.setItem('language', languageCode);
+    toast({
+      title: t('common.success'),
+      description: "Language updated",
+    });
   };
 
   const selectedCountry = COUNTRIES.find(c => c.code === profileData.country);
@@ -153,20 +196,20 @@ const Settings = () => {
         <div className="max-w-4xl mx-auto space-y-6">
           <Button variant="ghost" onClick={() => navigate("/dashboard")}>
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dashboard
+            {t('common.back')}
           </Button>
 
           <div>
-            <h1 className="text-3xl font-bold mb-2">Settings</h1>
-            <p className="text-muted-foreground">Manage your account and preferences</p>
+            <h1 className="text-3xl font-bold mb-2">{t('settings.title')}</h1>
+            <p className="text-muted-foreground">{t('settings.subtitle')}</p>
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="profile">Profile</TabsTrigger>
-              <TabsTrigger value="billing">Billing</TabsTrigger>
-              <TabsTrigger value="notifications">Notifications</TabsTrigger>
-              <TabsTrigger value="privacy">Privacy</TabsTrigger>
+              <TabsTrigger value="profile">{t('settings.tabs.profile')}</TabsTrigger>
+              <TabsTrigger value="billing">{t('settings.tabs.billing')}</TabsTrigger>
+              <TabsTrigger value="notifications">{t('settings.tabs.notifications')}</TabsTrigger>
+              <TabsTrigger value="privacy">{t('settings.tabs.privacy')}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="profile" className="space-y-4">
@@ -179,24 +222,22 @@ const Settings = () => {
               ) : (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Profile Information</CardTitle>
-                    <CardDescription>Update your personal details</CardDescription>
+                    <CardTitle>{t('settings.profile.title')}</CardTitle>
+                    <CardDescription>{t('settings.profile.description')}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="name">Full Name</Label>
+                      <Label htmlFor="name">{t('settings.profile.fullName')}</Label>
                       <Input
                         id="name"
                         placeholder="John Doe"
                         value={profileData.fullName}
-                        onChange={(e) =>
-                          setProfileData({ ...profileData, fullName: e.target.value })
-                        }
+                        onChange={(e) => handleFieldChange('fullName', 'full_name', e.target.value)}
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
+                      <Label htmlFor="email">{t('settings.profile.email')}</Label>
                       <Input
                         id="email"
                         type="email"
@@ -211,12 +252,29 @@ const Settings = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="country">Country</Label>
+                      <Label htmlFor="language">{t('settings.profile.language')}</Label>
+                      <Select
+                        value={i18n.language}
+                        onValueChange={handleLanguageChange}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select language" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {languages.map((language) => (
+                            <SelectItem key={language.code} value={language.code}>
+                              {language.flag} {language.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="country">{t('settings.profile.country')}</Label>
                       <Select
                         value={profileData.country}
-                        onValueChange={(value) =>
-                          setProfileData({ ...profileData, country: value })
-                        }
+                        onValueChange={(value) => handleFieldChange('country', 'country', value)}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select your country" />
@@ -232,7 +290,7 @@ const Settings = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
+                      <Label htmlFor="phone">{t('settings.profile.phone')}</Label>
                       <div className="flex gap-2">
                         <div className="w-24">
                           <Input
@@ -248,7 +306,7 @@ const Settings = () => {
                           value={profileData.phone}
                           onChange={(e) => {
                             const value = e.target.value.replace(/[^\d]/g, "");
-                            setProfileData({ ...profileData, phone: value });
+                            handleFieldChange('phone', 'phone', value);
                           }}
                           className="flex-1"
                         />
@@ -259,12 +317,10 @@ const Settings = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="currency">Preferred Currency</Label>
+                      <Label htmlFor="currency">{t('settings.profile.currency')}</Label>
                       <Select
                         value={profileData.currency}
-                        onValueChange={(value) =>
-                          setProfileData({ ...profileData, currency: value })
-                        }
+                        onValueChange={(value) => handleFieldChange('currency', 'currency', value)}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select currency" />
@@ -282,19 +338,9 @@ const Settings = () => {
                       </p>
                     </div>
 
-                    <Button onClick={handleSaveProfile} disabled={saving}>
-                      {saving ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <Save className="w-4 h-4 mr-2" />
-                          Save Changes
-                        </>
-                      )}
-                    </Button>
+                    <p className="text-xs text-muted-foreground pt-2 border-t">
+                      Changes are saved automatically in real-time
+                    </p>
                   </CardContent>
                 </Card>
               )}

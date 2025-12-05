@@ -1,0 +1,143 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "signOut": "Sign Out"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "diagnose": "Diagnose",
+    "properties": "Properties",
+    "calendar": "Calendar",
+    "history": "History",
+    "settings": "Settings"
+  },
+  "landing": {
+    "hero": {
+      "title": "AI-Powered Home Appliance Diagnosis",
+      "subtitle": "Get instant repair estimates, scam protection, and maintenance tracking for your rental properties",
+      "getStarted": "Get Started",
+      "goToDashboard": "Go to Dashboard",
+      "watchDemo": "Watch Demo"
+    },
+    "features": {
+      "title": "Why Choose FixSense?",
+      "aiDiagnosis": "AI Diagnosis",
+      "aiDiagnosisDesc": "Upload photos, videos, or audio to get instant appliance diagnosis",
+      "costEstimates": "Cost Estimates",
+      "costEstimatesDesc": "Get accurate repair cost ranges based on your location",
+      "scamProtection": "Scam Protection",
+      "scamProtectionDesc": "Avoid overpaying with our scam alert system"
+    },
+    "pricing": {
+      "title": "Simple, Transparent Pricing",
+      "free": "Free",
+      "pro": "Pro",
+      "business": "Business",
+      "perMonth": "/month"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome back",
+    "estimatedSavings": "Estimated Savings",
+    "diagnosticsRun": "Diagnostics Run",
+    "properties": "Properties",
+    "quickActions": "Quick Actions",
+    "diagnoseNow": "Diagnose Problem",
+    "viewHistory": "View History",
+    "manageProperties": "Manage Properties"
+  },
+  "diagnose": {
+    "title": "Diagnose Your Appliance",
+    "uploadPhoto": "Upload Photo",
+    "uploadVideo": "Upload Video",
+    "uploadAudio": "Upload Audio",
+    "describeIssue": "Describe Issue",
+    "analyzing": "Analyzing...",
+    "result": {
+      "title": "Diagnosis Result",
+      "summary": "Summary",
+      "probableCauses": "Probable Causes",
+      "estimatedCost": "Estimated Repair Cost",
+      "urgency": "Urgency Level",
+      "fixInstructions": "How to Fix",
+      "scamAlerts": "Scam Alerts"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Manage your account and preferences",
+    "tabs": {
+      "profile": "Profile",
+      "billing": "Billing",
+      "notifications": "Notifications",
+      "privacy": "Privacy"
+    },
+    "profile": {
+      "title": "Profile Information",
+      "description": "Update your personal details",
+      "fullName": "Full Name",
+      "email": "Email",
+      "country": "Country",
+      "phone": "Phone Number",
+      "currency": "Preferred Currency",
+      "language": "Language",
+      "saveChanges": "Save Changes"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "emailTitle": "Email Notifications",
+      "emailDescription": "Choose which email notifications you want to receive",
+      "pushTitle": "Push Notifications",
+      "pushDescription": "Receive real-time alerts in your browser",
+      "enablePush": "Enable Push Notifications",
+      "maintenanceReminders": "Maintenance Reminders",
+      "maintenanceRemindersDesc": "Get notified when appliances need scheduled maintenance",
+      "warrantyExpiration": "Warranty Expiration Alerts",
+      "warrantyExpirationDesc": "Get notified 30 days before warranties expire",
+      "criticalDiagnostics": "Critical Diagnostic Alerts",
+      "criticalDiagnosticsDesc": "Receive immediate alerts for critical appliance issues",
+      "weeklySummary": "Weekly Summary",
+      "weeklySummaryDesc": "Get a weekly digest of your property maintenance status",
+      "bookingConfirmations": "Booking Confirmations",
+      "bookingConfirmationsDesc": "Get notified when vendor appointments are scheduled"
+    },
+    "privacy": {
+      "title": "Privacy & Data",
+      "exportData": "Export My Data",
+      "deleteAccount": "Delete Account"
+    }
+  },
+  "properties": {
+    "title": "Properties",
+    "addProperty": "Add Property",
+    "noProperties": "No properties yet",
+    "appliances": "Appliances"
+  },
+  "vendors": {
+    "title": "Vendors",
+    "addVendor": "Add Vendor",
+    "bookService": "Book Service"
+  },
+  "footer": {
+    "company": "Company",
+    "aboutUs": "About Us",
+    "contact": "Contact",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "poweredBy": "Powered by Google Gemini AI"
+  }
+}

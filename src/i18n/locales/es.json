@@ -1,0 +1,143 @@
+{
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "submit": "Enviar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "view": "Ver",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "export": "Exportar",
+    "signOut": "Cerrar Sesión"
+  },
+  "nav": {
+    "dashboard": "Panel",
+    "diagnose": "Diagnosticar",
+    "properties": "Propiedades",
+    "calendar": "Calendario",
+    "history": "Historial",
+    "settings": "Configuración"
+  },
+  "landing": {
+    "hero": {
+      "title": "Diagnóstico de Electrodomésticos con IA",
+      "subtitle": "Obtén estimaciones de reparación instantáneas, protección contra estafas y seguimiento de mantenimiento para tus propiedades de alquiler",
+      "getStarted": "Comenzar",
+      "goToDashboard": "Ir al Panel",
+      "watchDemo": "Ver Demo"
+    },
+    "features": {
+      "title": "¿Por qué elegir FixSense?",
+      "aiDiagnosis": "Diagnóstico IA",
+      "aiDiagnosisDesc": "Sube fotos, videos o audio para obtener diagnóstico instantáneo",
+      "costEstimates": "Estimación de Costos",
+      "costEstimatesDesc": "Obtén rangos de costos precisos según tu ubicación",
+      "scamProtection": "Protección contra Estafas",
+      "scamProtectionDesc": "Evita pagar de más con nuestro sistema de alertas"
+    },
+    "pricing": {
+      "title": "Precios Simples y Transparentes",
+      "free": "Gratis",
+      "pro": "Pro",
+      "business": "Empresa",
+      "perMonth": "/mes"
+    }
+  },
+  "dashboard": {
+    "title": "Panel",
+    "welcome": "Bienvenido de nuevo",
+    "estimatedSavings": "Ahorro Estimado",
+    "diagnosticsRun": "Diagnósticos Realizados",
+    "properties": "Propiedades",
+    "quickActions": "Acciones Rápidas",
+    "diagnoseNow": "Diagnosticar Problema",
+    "viewHistory": "Ver Historial",
+    "manageProperties": "Gestionar Propiedades"
+  },
+  "diagnose": {
+    "title": "Diagnostica tu Electrodoméstico",
+    "uploadPhoto": "Subir Foto",
+    "uploadVideo": "Subir Video",
+    "uploadAudio": "Subir Audio",
+    "describeIssue": "Describir Problema",
+    "analyzing": "Analizando...",
+    "result": {
+      "title": "Resultado del Diagnóstico",
+      "summary": "Resumen",
+      "probableCauses": "Causas Probables",
+      "estimatedCost": "Costo de Reparación Estimado",
+      "urgency": "Nivel de Urgencia",
+      "fixInstructions": "Cómo Reparar",
+      "scamAlerts": "Alertas de Estafa"
+    }
+  },
+  "settings": {
+    "title": "Configuración",
+    "subtitle": "Gestiona tu cuenta y preferencias",
+    "tabs": {
+      "profile": "Perfil",
+      "billing": "Facturación",
+      "notifications": "Notificaciones",
+      "privacy": "Privacidad"
+    },
+    "profile": {
+      "title": "Información del Perfil",
+      "description": "Actualiza tus datos personales",
+      "fullName": "Nombre Completo",
+      "email": "Correo Electrónico",
+      "country": "País",
+      "phone": "Número de Teléfono",
+      "currency": "Moneda Preferida",
+      "language": "Idioma",
+      "saveChanges": "Guardar Cambios"
+    },
+    "notifications": {
+      "title": "Notificaciones",
+      "emailTitle": "Notificaciones por Email",
+      "emailDescription": "Elige qué notificaciones por email deseas recibir",
+      "pushTitle": "Notificaciones Push",
+      "pushDescription": "Recibe alertas en tiempo real en tu navegador",
+      "enablePush": "Activar Notificaciones Push",
+      "maintenanceReminders": "Recordatorios de Mantenimiento",
+      "maintenanceRemindersDesc": "Recibe avisos cuando los electrodomésticos necesiten mantenimiento",
+      "warrantyExpiration": "Alertas de Vencimiento de Garantía",
+      "warrantyExpirationDesc": "Recibe avisos 30 días antes del vencimiento",
+      "criticalDiagnostics": "Alertas de Diagnósticos Críticos",
+      "criticalDiagnosticsDesc": "Recibe alertas inmediatas para problemas críticos",
+      "weeklySummary": "Resumen Semanal",
+      "weeklySummaryDesc": "Recibe un resumen semanal del estado de mantenimiento",
+      "bookingConfirmations": "Confirmaciones de Reservas",
+      "bookingConfirmationsDesc": "Recibe avisos cuando se programen citas"
+    },
+    "privacy": {
+      "title": "Privacidad y Datos",
+      "exportData": "Exportar Mis Datos",
+      "deleteAccount": "Eliminar Cuenta"
+    }
+  },
+  "properties": {
+    "title": "Propiedades",
+    "addProperty": "Agregar Propiedad",
+    "noProperties": "Sin propiedades aún",
+    "appliances": "Electrodomésticos"
+  },
+  "vendors": {
+    "title": "Proveedores",
+    "addVendor": "Agregar Proveedor",
+    "bookService": "Reservar Servicio"
+  },
+  "footer": {
+    "company": "Empresa",
+    "aboutUs": "Sobre Nosotros",
+    "contact": "Contacto",
+    "privacyPolicy": "Política de Privacidad",
+    "termsOfService": "Términos de Servicio",
+    "poweredBy": "Impulsado por Google Gemini AI"
+  }
+}
