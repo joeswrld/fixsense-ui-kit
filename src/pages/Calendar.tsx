@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -22,85 +24,26 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { 
-  ArrowLeft, 
   Loader2, 
   CheckCircle2, 
   Download, 
   Calendar,
   History,
-  Upload
 } from "lucide-react";
 import { format } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-// Mock data for demonstration
-const mockEvents = [
-  {
-    id: "1",
-    name: "HVAC System",
-    type: "HVAC",
-    next_maintenance_date: "2025-12-15",
-    property: { name: "Main Office", id: "p1" }
-  },
-  {
-    id: "2",
-    name: "Water Heater",
-    type: "Water Heater",
-    next_maintenance_date: "2025-12-20",
-    property: { name: "Apartment 301", id: "p2" }
-  },
-  {
-    id: "3",
-    name: "Refrigerator",
-    type: "Refrigerator",
-    next_maintenance_date: "2025-12-08",
-    property: { name: "Main Office", id: "p1" }
-  }
-];
-
-const mockHistory = [
-  {
-    id: "h1",
-    appliance_id: "1",
-    maintenance_type: "Filter Replacement",
-    maintenance_date: "2025-11-15",
-    cost: 150,
-    notes: "Replaced air filters",
-    appliance_name: "HVAC System",
-    property_name: "Main Office"
-  },
-  {
-    id: "h2",
-    appliance_id: "2",
-    maintenance_type: "Inspection",
-    maintenance_date: "2025-11-20",
-    cost: 75,
-    notes: "Annual inspection completed",
-    appliance_name: "Water Heater",
-    property_name: "Apartment 301"
-  }
-];
-
-const mockVendors = [
-  { id: "v1", name: "HVAC Pros Inc." },
-  { id: "v2", name: "Plumbing Experts" },
-  { id: "v3", name: "Appliance Care Co." }
-];
+import { toast } from "sonner";
+import { useCurrency } from "@/hooks/useCurrency";
 
 const EnhancedCalendar = () => {
-  const [loading, setLoading] = useState(false);
-  const [events, setEvents] = useState(mockEvents);
-  const [history, setHistory] = useState(mockHistory);
-  const [vendors, setVendors] = useState(mockVendors);
   const [selectedDate, setSelectedDate] = useState(undefined);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showDialog, setShowDialog] = useState(false);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [newDate, setNewDate] = useState(undefined);
   
-  // Completion form state
   const [maintenanceType, setMaintenanceType] = useState("");
   const [vendorId, setVendorId] = useState("");
   const [cost, setCost] = useState("");
@@ -108,24 +51,234 @@ const EnhancedCalendar = () => {
   const [beforePhoto, setBeforePhoto] = useState(null);
   const [afterPhoto, setAfterPhoto] = useState(null);
 
+  const queryClient = useQueryClient();
+  const { format: formatCurrency, symbol } = useCurrency();
+
+  // Fetch scheduled maintenance (appliances with next_maintenance_date)
+  const { data: events = [], isLoading: eventsLoading } = useQuery({
+    queryKey: ["scheduled-maintenance"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase
+        .from("appliances")
+        .select(`
+          id,
+          name,
+          type,
+          next_maintenance_date,
+          properties!inner (
+            id,
+            name,
+            user_id
+          )
+        `)
+        .eq("properties.user_id", user.id)
+        .not("next_maintenance_date", "is", null)
+        .order("next_maintenance_date", { ascending: true });
+
+      if (error) throw error;
+      
+      return (data || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        type: item.type,
+        next_maintenance_date: item.next_maintenance_date,
+        property: {
+          id: item.properties.id,
+          name: item.properties.name
+        }
+      }));
+    },
+  });
+
+  // Fetch maintenance history
+  const { data: history = [], isLoading: historyLoading } = useQuery({
+    queryKey: ["maintenance-history-calendar"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase
+        .from("maintenance_history")
+        .select(`
+          id,
+          maintenance_type,
+          maintenance_date,
+          cost,
+          notes,
+          appliances!inner (
+            id,
+            name,
+            type,
+            properties!inner (
+              id,
+              name,
+              user_id
+            )
+          ),
+          vendors (
+            name
+          )
+        `)
+        .eq("user_id", user.id)
+        .order("maintenance_date", { ascending: false });
+
+      if (error) throw error;
+
+      return (data || []).map(record => ({
+        id: record.id,
+        appliance_id: record.appliances.id,
+        maintenance_type: record.maintenance_type,
+        maintenance_date: record.maintenance_date,
+        cost: record.cost,
+        notes: record.notes,
+        appliance_name: record.appliances.name,
+        appliance_type: record.appliances.type,
+        property_name: record.appliances.properties.name,
+        vendor_name: record.vendors?.name
+      }));
+    },
+  });
+
+  // Fetch vendors
+  const { data: vendors = [] } = useQuery({
+    queryKey: ["vendors"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase
+        .from("vendors")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("name", { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Upload photo to storage
+  const uploadPhoto = async (file, applianceId) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Not authenticated");
+
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${user.id}/${applianceId}/${Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("maintenance-photos")
+      .upload(fileName, file);
+
+    if (uploadError) throw uploadError;
+
+    const { data } = supabase.storage
+      .from("maintenance-photos")
+      .getPublicUrl(fileName);
+
+    return data.publicUrl;
+  };
+
+  // Reschedule maintenance
+  const rescheduleMutation = useMutation({
+    mutationFn: async ({ applianceId, newDate }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { error } = await supabase
+        .from("appliances")
+        .update({ next_maintenance_date: format(newDate, "yyyy-MM-dd") })
+        .eq("id", applianceId)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["scheduled-maintenance"] });
+      toast.success("Maintenance rescheduled successfully");
+      setShowDialog(false);
+      setSelectedEvent(null);
+      setNewDate(undefined);
+    },
+    onError: () => {
+      toast.error("Failed to reschedule maintenance");
+    },
+  });
+
+  // Complete maintenance
+  const completeMutation = useMutation({
+    mutationFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      let beforePhotoUrl = null;
+      let afterPhotoUrl = null;
+
+      if (beforePhoto) {
+        beforePhotoUrl = await uploadPhoto(beforePhoto, selectedEvent.id);
+      }
+
+      if (afterPhoto) {
+        afterPhotoUrl = await uploadPhoto(afterPhoto, selectedEvent.id);
+      }
+
+      // Add to maintenance history
+      const { error: historyError } = await supabase
+        .from("maintenance_history")
+        .insert({
+          appliance_id: selectedEvent.id,
+          user_id: user.id,
+          vendor_id: vendorId || null,
+          maintenance_type: maintenanceType,
+          cost: cost ? parseFloat(cost) : null,
+          notes,
+          before_photo_url: beforePhotoUrl,
+          after_photo_url: afterPhotoUrl,
+          completed: true,
+        });
+
+      if (historyError) throw historyError;
+
+      // Update next maintenance date (30 days from today)
+      const today = new Date();
+      const nextDate = new Date(today);
+      nextDate.setDate(nextDate.getDate() + 30);
+
+      const { error: updateError } = await supabase
+        .from("appliances")
+        .update({ next_maintenance_date: format(nextDate, "yyyy-MM-dd") })
+        .eq("id", selectedEvent.id);
+
+      if (updateError) throw updateError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["scheduled-maintenance"] });
+      queryClient.invalidateQueries({ queryKey: ["maintenance-history-calendar"] });
+      toast.success("Maintenance completed successfully");
+      
+      setMaintenanceType("");
+      setVendorId("");
+      setCost("");
+      setNotes("");
+      setBeforePhoto(null);
+      setAfterPhoto(null);
+      setShowCompletionDialog(false);
+      setSelectedEvent(null);
+    },
+    onError: () => {
+      toast.error("Failed to complete maintenance");
+    },
+  });
+
   const handleReschedule = () => {
     if (!selectedEvent || !newDate) return;
-
-    setEvents(prev => prev.map(e => 
-      e.id === selectedEvent.id 
-        ? { ...e, next_maintenance_date: format(newDate, "yyyy-MM-dd") }
-        : e
-    ));
-
-    setShowDialog(false);
-    setSelectedEvent(null);
-    setNewDate(undefined);
+    rescheduleMutation.mutate({ applianceId: selectedEvent.id, newDate });
   };
 
   const handleMarkCompleted = () => {
     if (!selectedEvent) return;
-    
-    // Pre-fill the maintenance type with the appliance name
     setMaintenanceType(`Scheduled maintenance for ${selectedEvent.name}`);
     setShowDialog(false);
     setShowCompletionDialog(true);
@@ -133,42 +286,7 @@ const EnhancedCalendar = () => {
 
   const handleSaveCompletion = () => {
     if (!selectedEvent || !maintenanceType) return;
-
-    const today = new Date();
-    const nextDate = new Date(today);
-    nextDate.setDate(nextDate.getDate() + 30);
-
-    // Add to history
-    const newRecord = {
-      id: `h${history.length + 1}`,
-      appliance_id: selectedEvent.id,
-      maintenance_type: maintenanceType,
-      maintenance_date: format(today, "yyyy-MM-dd"),
-      cost: cost ? parseFloat(cost) : null,
-      notes: notes || null,
-      appliance_name: selectedEvent.name,
-      property_name: selectedEvent.property.name,
-      vendor_id: vendorId || null
-    };
-
-    setHistory(prev => [newRecord, ...prev]);
-
-    // Update next maintenance date
-    setEvents(prev => prev.map(e => 
-      e.id === selectedEvent.id 
-        ? { ...e, next_maintenance_date: format(nextDate, "yyyy-MM-dd") }
-        : e
-    ));
-
-    // Reset form
-    setMaintenanceType("");
-    setVendorId("");
-    setCost("");
-    setNotes("");
-    setBeforePhoto(null);
-    setAfterPhoto(null);
-    setShowCompletionDialog(false);
-    setSelectedEvent(null);
+    completeMutation.mutate();
   };
 
   const getEventsForDate = (date) => {
@@ -185,6 +303,32 @@ const EnhancedCalendar = () => {
 
   const datesWithEvents = events.map(event => new Date(event.next_maintenance_date));
   const datesWithHistory = history.map(record => new Date(record.maintenance_date));
+
+  // Calculate statistics
+  const upcomingCount = events.filter(e => {
+    const diff = new Date(e.next_maintenance_date).getTime() - new Date().getTime();
+    return diff > 0 && diff < 30 * 24 * 60 * 60 * 1000;
+  }).length;
+
+  const completedThisMonth = history.filter(h => {
+    const date = new Date(h.maintenance_date);
+    const now = new Date();
+    return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+  }).length;
+
+  const totalSpentThisMonth = history.filter(h => {
+    const date = new Date(h.maintenance_date);
+    const now = new Date();
+    return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+  }).reduce((sum, h) => sum + (h.cost || 0), 0);
+
+  if (eventsLoading || historyLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8">
@@ -328,7 +472,7 @@ const EnhancedCalendar = () => {
                             </div>
                             {record.cost && (
                               <div className="font-semibold text-green-600">
-                                ${record.cost.toFixed(2)}
+                                {formatCurrency(record.cost)}
                               </div>
                             )}
                           </div>
@@ -356,7 +500,7 @@ const EnhancedCalendar = () => {
                           </div>
                           {record.cost && (
                             <div className="font-semibold text-green-600">
-                              ${record.cost.toFixed(2)}
+                              {formatCurrency(record.cost)}
                             </div>
                           )}
                         </div>
@@ -379,12 +523,7 @@ const EnhancedCalendar = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-slate-600">Upcoming (30 days)</p>
-                  <p className="text-3xl font-bold text-blue-600">
-                    {events.filter(e => {
-                      const diff = new Date(e.next_maintenance_date).getTime() - new Date().getTime();
-                      return diff > 0 && diff < 30 * 24 * 60 * 60 * 1000;
-                    }).length}
-                  </p>
+                  <p className="text-3xl font-bold text-blue-600">{upcomingCount}</p>
                 </div>
                 <Calendar className="w-10 h-10 text-blue-600 opacity-20" />
               </div>
@@ -396,13 +535,7 @@ const EnhancedCalendar = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-slate-600">Completed This Month</p>
-                  <p className="text-3xl font-bold text-green-600">
-                    {history.filter(h => {
-                      const date = new Date(h.maintenance_date);
-                      const now = new Date();
-                      return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-                    }).length}
-                  </p>
+                  <p className="text-3xl font-bold text-green-600">{completedThisMonth}</p>
                 </div>
                 <CheckCircle2 className="w-10 h-10 text-green-600 opacity-20" />
               </div>
@@ -415,11 +548,7 @@ const EnhancedCalendar = () => {
                 <div>
                   <p className="text-sm text-slate-600">Total Spent (Month)</p>
                   <p className="text-3xl font-bold text-purple-600">
-                    ${history.filter(h => {
-                      const date = new Date(h.maintenance_date);
-                      const now = new Date();
-                      return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-                    }).reduce((sum, h) => sum + (h.cost || 0), 0).toFixed(2)}
+                    {formatCurrency(totalSpentThisMonth)}
                   </p>
                 </div>
                 <Download className="w-10 h-10 text-purple-600 opacity-20" />
@@ -488,9 +617,10 @@ const EnhancedCalendar = () => {
             </Button>
             <Button
               onClick={handleReschedule}
-              disabled={!newDate}
+              disabled={!newDate || rescheduleMutation.isPending}
               className="w-full sm:w-auto"
             >
+              {rescheduleMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
               Reschedule
             </Button>
           </DialogFooter>
@@ -535,7 +665,7 @@ const EnhancedCalendar = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="cost">Cost ($)</Label>
+              <Label htmlFor="cost">Cost ({symbol})</Label>
               <Input
                 id="cost"
                 type="number"
@@ -584,10 +714,17 @@ const EnhancedCalendar = () => {
             </Button>
             <Button
               onClick={handleSaveCompletion}
-              disabled={!maintenanceType}
+              disabled={!maintenanceType || completeMutation.isPending}
               className="bg-gradient-to-r from-blue-600 to-purple-600"
             >
-              Save & Complete
+              {completeMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save & Complete"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
