@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -14,364 +15,421 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ArrowLeft, Loader2, CheckCircle2, Download, Calendar as CalendarIcon } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { 
+  ArrowLeft, 
+  Loader2, 
+  CheckCircle2, 
+  Download, 
+  Calendar,
+  History,
+  Upload
+} from "lucide-react";
 import { format } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { downloadICalFile, generateGoogleCalendarUrl, CalendarEvent } from "@/lib/calendarExport";
-import { AppHeader } from "@/components/AppHeader";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-interface MaintenanceEvent {
-  id: string;
-  name: string;
-  type: string;
-  next_maintenance_date: string;
-  property: { name: string; id: string };
-}
+// Mock data for demonstration
+const mockEvents = [
+  {
+    id: "1",
+    name: "HVAC System",
+    type: "HVAC",
+    next_maintenance_date: "2025-12-15",
+    property: { name: "Main Office", id: "p1" }
+  },
+  {
+    id: "2",
+    name: "Water Heater",
+    type: "Water Heater",
+    next_maintenance_date: "2025-12-20",
+    property: { name: "Apartment 301", id: "p2" }
+  },
+  {
+    id: "3",
+    name: "Refrigerator",
+    type: "Refrigerator",
+    next_maintenance_date: "2025-12-08",
+    property: { name: "Main Office", id: "p1" }
+  }
+];
 
-const Calendar = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [events, setEvents] = useState<MaintenanceEvent[]>([]);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
-  const [selectedEvent, setSelectedEvent] = useState<MaintenanceEvent | null>(null);
+const mockHistory = [
+  {
+    id: "h1",
+    appliance_id: "1",
+    maintenance_type: "Filter Replacement",
+    maintenance_date: "2025-11-15",
+    cost: 150,
+    notes: "Replaced air filters",
+    appliance_name: "HVAC System",
+    property_name: "Main Office"
+  },
+  {
+    id: "h2",
+    appliance_id: "2",
+    maintenance_type: "Inspection",
+    maintenance_date: "2025-11-20",
+    cost: 75,
+    notes: "Annual inspection completed",
+    appliance_name: "Water Heater",
+    property_name: "Apartment 301"
+  }
+];
+
+const mockVendors = [
+  { id: "v1", name: "HVAC Pros Inc." },
+  { id: "v2", name: "Plumbing Experts" },
+  { id: "v3", name: "Appliance Care Co." }
+];
+
+const EnhancedCalendar = () => {
+  const [loading, setLoading] = useState(false);
+  const [events, setEvents] = useState(mockEvents);
+  const [history, setHistory] = useState(mockHistory);
+  const [vendors, setVendors] = useState(mockVendors);
+  const [selectedDate, setSelectedDate] = useState(undefined);
+  const [selectedEvent, setSelectedEvent] = useState(null);
   const [showDialog, setShowDialog] = useState(false);
-  const [newDate, setNewDate] = useState<Date | undefined>();
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [newDate, setNewDate] = useState(undefined);
+  
+  // Completion form state
+  const [maintenanceType, setMaintenanceType] = useState("");
+  const [vendorId, setVendorId] = useState("");
+  const [cost, setCost] = useState("");
+  const [notes, setNotes] = useState("");
+  const [beforePhoto, setBeforePhoto] = useState(null);
+  const [afterPhoto, setAfterPhoto] = useState(null);
 
-  useEffect(() => {
-    fetchMaintenanceEvents();
-  }, []);
-
-  const fetchMaintenanceEvents = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        navigate("/auth");
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from("appliances")
-        .select(`
-          id,
-          name,
-          type,
-          next_maintenance_date,
-          properties!inner (
-            id,
-            name,
-            user_id
-          )
-        `)
-        .eq("properties.user_id", user.id)
-        .not("next_maintenance_date", "is", null)
-        .order("next_maintenance_date", { ascending: true });
-
-      if (error) throw error;
-
-      setEvents(data?.map(a => ({
-        id: a.id,
-        name: a.name,
-        type: a.type,
-        next_maintenance_date: a.next_maintenance_date,
-        property: a.properties as any,
-      })) || []);
-    } catch (error) {
-      console.error("Error fetching maintenance events:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load maintenance schedule",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleReschedule = async () => {
+  const handleReschedule = () => {
     if (!selectedEvent || !newDate) return;
 
-    try {
-      const { error } = await supabase
-        .from("appliances")
-        .update({ next_maintenance_date: format(newDate, "yyyy-MM-dd") })
-        .eq("id", selectedEvent.id);
+    setEvents(prev => prev.map(e => 
+      e.id === selectedEvent.id 
+        ? { ...e, next_maintenance_date: format(newDate, "yyyy-MM-dd") }
+        : e
+    ));
 
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Maintenance date has been rescheduled",
-      });
-
-      setShowDialog(false);
-      setSelectedEvent(null);
-      setNewDate(undefined);
-      fetchMaintenanceEvents();
-    } catch (error) {
-      console.error("Error rescheduling maintenance:", error);
-      toast({
-        title: "Error",
-        description: "Failed to reschedule maintenance",
-        variant: "destructive",
-      });
-    }
+    setShowDialog(false);
+    setSelectedEvent(null);
+    setNewDate(undefined);
   };
 
-  const handleMarkCompleted = async () => {
+  const handleMarkCompleted = () => {
     if (!selectedEvent) return;
-
-    try {
-      const today = new Date();
-      const nextDate = new Date(today);
-      nextDate.setDate(nextDate.getDate() + 30);
-
-      const { error } = await supabase
-        .from("appliances")
-        .update({
-          last_maintenance_date: format(today, "yyyy-MM-dd"),
-          next_maintenance_date: format(nextDate, "yyyy-MM-dd"),
-        })
-        .eq("id", selectedEvent.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Maintenance marked as completed",
-      });
-
-      setShowDialog(false);
-      setSelectedEvent(null);
-      fetchMaintenanceEvents();
-    } catch (error) {
-      console.error("Error marking maintenance as completed:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update maintenance status",
-        variant: "destructive",
-      });
-    }
+    
+    // Pre-fill the maintenance type with the appliance name
+    setMaintenanceType(`Scheduled maintenance for ${selectedEvent.name}`);
+    setShowDialog(false);
+    setShowCompletionDialog(true);
   };
 
-  const getEventsForDate = (date: Date) => {
+  const handleSaveCompletion = () => {
+    if (!selectedEvent || !maintenanceType) return;
+
+    const today = new Date();
+    const nextDate = new Date(today);
+    nextDate.setDate(nextDate.getDate() + 30);
+
+    // Add to history
+    const newRecord = {
+      id: `h${history.length + 1}`,
+      appliance_id: selectedEvent.id,
+      maintenance_type: maintenanceType,
+      maintenance_date: format(today, "yyyy-MM-dd"),
+      cost: cost ? parseFloat(cost) : null,
+      notes: notes || null,
+      appliance_name: selectedEvent.name,
+      property_name: selectedEvent.property.name,
+      vendor_id: vendorId || null
+    };
+
+    setHistory(prev => [newRecord, ...prev]);
+
+    // Update next maintenance date
+    setEvents(prev => prev.map(e => 
+      e.id === selectedEvent.id 
+        ? { ...e, next_maintenance_date: format(nextDate, "yyyy-MM-dd") }
+        : e
+    ));
+
+    // Reset form
+    setMaintenanceType("");
+    setVendorId("");
+    setCost("");
+    setNotes("");
+    setBeforePhoto(null);
+    setAfterPhoto(null);
+    setShowCompletionDialog(false);
+    setSelectedEvent(null);
+  };
+
+  const getEventsForDate = (date) => {
     return events.filter(
       event => format(new Date(event.next_maintenance_date), "yyyy-MM-dd") === format(date, "yyyy-MM-dd")
     );
   };
 
-  const datesWithEvents = events.map(event => new Date(event.next_maintenance_date));
-
-  const handleExportAll = () => {
-    const calendarEvents: CalendarEvent[] = events.map(event => {
-      const startDate = new Date(event.next_maintenance_date);
-      const endDate = new Date(startDate);
-      endDate.setHours(endDate.getHours() + 2);
-
-      return {
-        id: event.id,
-        title: `Maintenance: ${event.name}`,
-        description: `Scheduled maintenance for ${event.type} at ${event.property.name}`,
-        location: event.property.name,
-        startDate,
-        endDate,
-      };
-    });
-
-    downloadICalFile(calendarEvents);
-    toast({
-      title: "Calendar Exported",
-      description: "Your maintenance schedule has been exported. Import it into any calendar app.",
-    });
-  };
-
-  const handleExportSingle = (event: MaintenanceEvent) => {
-    const startDate = new Date(event.next_maintenance_date);
-    const endDate = new Date(startDate);
-    endDate.setHours(endDate.getHours() + 2);
-
-    const calendarEvent: CalendarEvent = {
-      id: event.id,
-      title: `Maintenance: ${event.name}`,
-      description: `Scheduled maintenance for ${event.type} at ${event.property.name}`,
-      location: event.property.name,
-      startDate,
-      endDate,
-    };
-
-    window.open(generateGoogleCalendarUrl(calendarEvent), "_blank");
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-accent/10 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
+  const getHistoryForDate = (date) => {
+    return history.filter(
+      record => format(new Date(record.maintenance_date), "yyyy-MM-dd") === format(date, "yyyy-MM-dd")
     );
-  }
+  };
+
+  const datesWithEvents = events.map(event => new Date(event.next_maintenance_date));
+  const datesWithHistory = history.map(record => new Date(record.maintenance_date));
 
   return (
-    <div className="min-h-screen bg-accent/10">
-      <AppHeader />
-
-      <main className="container px-4 py-8">
-        <div className="max-w-6xl mx-auto space-y-6">
-          <Button variant="ghost" onClick={() => navigate("/dashboard")}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dashboard
-          </Button>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">Maintenance Calendar</h1>
-              <p className="text-muted-foreground">View and manage scheduled maintenance across all properties</p>
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button>
-                  <Download className="w-4 h-4 mr-2" />
-                  Export Calendar
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleExportAll}>
-                  Download iCal File
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Maintenance Calendar
+            </h1>
+            <p className="text-slate-600">View scheduled and completed maintenance</p>
           </div>
+          <Button className="bg-gradient-to-r from-blue-600 to-purple-600">
+            <Download className="w-4 h-4 mr-2" />
+            Export Calendar
+          </Button>
+        </div>
 
-          <div className="grid lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Maintenance Schedule</CardTitle>
-                <CardDescription>Click on a date to view scheduled maintenance</CardDescription>
-              </CardHeader>
-              <CardContent className="flex justify-center">
-                <CalendarComponent
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={setSelectedDate}
-                  className="rounded-md border pointer-events-auto"
-                  modifiers={{
-                    hasEvent: datesWithEvents,
-                  }}
-                  modifiersStyles={{
-                    hasEvent: {
-                      backgroundColor: "hsl(var(--primary))",
-                      color: "white",
-                      fontWeight: "bold",
-                    },
-                  }}
-                />
-              </CardContent>
-            </Card>
+        <div className="grid lg:grid-cols-2 gap-6">
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle>Maintenance Schedule</CardTitle>
+              <CardDescription>
+                <span className="inline-flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-blue-500"></span>
+                  Scheduled
+                  <span className="w-3 h-3 rounded-full bg-green-500 ml-2"></span>
+                  Completed
+                </span>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex justify-center">
+              <CalendarComponent
+                mode="single"
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                className="rounded-md border"
+                modifiers={{
+                  scheduled: datesWithEvents,
+                  completed: datesWithHistory,
+                }}
+                modifiersStyles={{
+                  scheduled: {
+                    backgroundColor: "rgb(59 130 246)",
+                    color: "white",
+                    fontWeight: "bold",
+                  },
+                  completed: {
+                    backgroundColor: "rgb(34 197 94)",
+                    color: "white",
+                    fontWeight: "bold",
+                  },
+                }}
+              />
+            </CardContent>
+          </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  {selectedDate
-                    ? `Maintenance on ${format(selectedDate, "MMMM d, yyyy")}`
-                    : "Upcoming Maintenance"}
-                </CardTitle>
-                <CardDescription>
-                  {selectedDate
-                    ? "Scheduled for this date"
-                    : "Next 30 days"}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {selectedDate ? (
-                  <div className="space-y-3">
-                    {getEventsForDate(selectedDate).length === 0 ? (
-                      <p className="text-center text-muted-foreground py-8">
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle>
+                {selectedDate
+                  ? format(selectedDate, "MMMM d, yyyy")
+                  : "Upcoming Maintenance"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="scheduled" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="scheduled">
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Scheduled
+                  </TabsTrigger>
+                  <TabsTrigger value="history">
+                    <History className="w-4 h-4 mr-2" />
+                    History
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="scheduled" className="space-y-3 mt-4">
+                  {selectedDate ? (
+                    getEventsForDate(selectedDate).length === 0 ? (
+                      <p className="text-center text-slate-500 py-8">
                         No maintenance scheduled for this date
                       </p>
                     ) : (
                       getEventsForDate(selectedDate).map((event) => (
                         <div
                           key={event.id}
-                          className="p-4 bg-accent/30 rounded-lg hover:bg-accent/50 transition-colors"
+                          className="p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer border-l-4 border-blue-500"
+                          onClick={() => {
+                            setSelectedEvent(event);
+                            setShowDialog(true);
+                          }}
                         >
-                          <div className="flex items-start justify-between">
-                            <div
-                              className="flex-1 cursor-pointer"
-                              onClick={() => {
-                                setSelectedEvent(event);
-                                setShowDialog(true);
-                              }}
-                            >
-                              <p className="font-medium">{event.name}</p>
-                              <p className="text-sm text-muted-foreground">{event.property.name}</p>
-                              <Badge variant="outline" className="mt-2">{event.type}</Badge>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleExportSingle(event);
-                              }}
-                            >
-                              <Download className="w-4 h-4" />
-                            </Button>
-                          </div>
+                          <p className="font-semibold text-lg">{event.name}</p>
+                          <p className="text-sm text-slate-600">{event.property.name}</p>
+                          <Badge variant="outline" className="mt-2">{event.type}</Badge>
                         </div>
                       ))
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {events.slice(0, 10).map((event) => (
+                    )
+                  ) : (
+                    events.slice(0, 10).map((event) => (
                       <div
                         key={event.id}
-                        className="p-4 bg-accent/30 rounded-lg hover:bg-accent/50 transition-colors"
+                        className="p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer border-l-4 border-blue-500"
+                        onClick={() => {
+                          setSelectedEvent(event);
+                          setShowDialog(true);
+                        }}
                       >
-                        <div className="flex items-start justify-between">
-                          <div
-                            className="flex-1 cursor-pointer"
-                            onClick={() => {
-                              setSelectedEvent(event);
-                              setShowDialog(true);
-                            }}
-                          >
-                            <p className="font-medium">{event.name}</p>
-                            <p className="text-sm text-muted-foreground">{event.property.name}</p>
-                            <div className="flex items-center gap-2 mt-2">
-                              <Badge variant="outline">{event.type}</Badge>
-                              <span className="text-sm text-muted-foreground">
-                                {format(new Date(event.next_maintenance_date), "MMM d, yyyy")}
-                              </span>
-                            </div>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleExportSingle(event);
-                            }}
-                          >
-                            <Download className="w-4 h-4" />
-                          </Button>
+                        <p className="font-semibold text-lg">{event.name}</p>
+                        <p className="text-sm text-slate-600">{event.property.name}</p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Badge variant="outline">{event.type}</Badge>
+                          <span className="text-sm text-slate-500">
+                            {format(new Date(event.next_maintenance_date), "MMM d, yyyy")}
+                          </span>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </main>
+                    ))
+                  )}
+                </TabsContent>
 
+                <TabsContent value="history" className="space-y-3 mt-4">
+                  {selectedDate ? (
+                    getHistoryForDate(selectedDate).length === 0 ? (
+                      <p className="text-center text-slate-500 py-8">
+                        No completed maintenance on this date
+                      </p>
+                    ) : (
+                      getHistoryForDate(selectedDate).map((record) => (
+                        <div
+                          key={record.id}
+                          className="p-4 bg-green-50 rounded-lg border-l-4 border-green-500"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <p className="font-semibold text-lg">{record.maintenance_type}</p>
+                              <p className="text-sm text-slate-600">
+                                {record.appliance_name} • {record.property_name}
+                              </p>
+                            </div>
+                            {record.cost && (
+                              <div className="font-semibold text-green-600">
+                                ${record.cost.toFixed(2)}
+                              </div>
+                            )}
+                          </div>
+                          {record.notes && (
+                            <p className="text-sm text-slate-600 mt-2">{record.notes}</p>
+                          )}
+                        </div>
+                      ))
+                    )
+                  ) : (
+                    history.slice(0, 10).map((record) => (
+                      <div
+                        key={record.id}
+                        className="p-4 bg-green-50 rounded-lg border-l-4 border-green-500"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="font-semibold text-lg">{record.maintenance_type}</p>
+                            <p className="text-sm text-slate-600">
+                              {record.appliance_name} • {record.property_name}
+                            </p>
+                            <span className="text-sm text-slate-500">
+                              {format(new Date(record.maintenance_date), "MMM d, yyyy")}
+                            </span>
+                          </div>
+                          {record.cost && (
+                            <div className="font-semibold text-green-600">
+                              ${record.cost.toFixed(2)}
+                            </div>
+                          )}
+                        </div>
+                        {record.notes && (
+                          <p className="text-sm text-slate-600 mt-2">{record.notes}</p>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Statistics Cards */}
+        <div className="grid md:grid-cols-3 gap-4">
+          <Card className="shadow-lg">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600">Upcoming (30 days)</p>
+                  <p className="text-3xl font-bold text-blue-600">
+                    {events.filter(e => {
+                      const diff = new Date(e.next_maintenance_date).getTime() - new Date().getTime();
+                      return diff > 0 && diff < 30 * 24 * 60 * 60 * 1000;
+                    }).length}
+                  </p>
+                </div>
+                <Calendar className="w-10 h-10 text-blue-600 opacity-20" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-lg">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600">Completed This Month</p>
+                  <p className="text-3xl font-bold text-green-600">
+                    {history.filter(h => {
+                      const date = new Date(h.maintenance_date);
+                      const now = new Date();
+                      return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+                    }).length}
+                  </p>
+                </div>
+                <CheckCircle2 className="w-10 h-10 text-green-600 opacity-20" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-lg">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600">Total Spent (Month)</p>
+                  <p className="text-3xl font-bold text-purple-600">
+                    ${history.filter(h => {
+                      const date = new Date(h.maintenance_date);
+                      const now = new Date();
+                      return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+                    }).reduce((sum, h) => sum + (h.cost || 0), 0).toFixed(2)}
+                  </p>
+                </div>
+                <Download className="w-10 h-10 text-purple-600 opacity-20" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Event Details Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent>
           <DialogHeader>
@@ -384,7 +442,7 @@ const Calendar = () => {
           <div className="space-y-4 py-4">
             <div>
               <p className="text-sm font-medium mb-2">Current Maintenance Date</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-slate-600">
                 {selectedEvent && format(new Date(selectedEvent.next_maintenance_date), "MMMM d, yyyy")}
               </p>
             </div>
@@ -397,10 +455,10 @@ const Calendar = () => {
                     variant="outline"
                     className={cn(
                       "w-full justify-start text-left font-normal",
-                      !newDate && "text-muted-foreground"
+                      !newDate && "text-slate-500"
                     )}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    <Calendar className="mr-2 h-4 w-4" />
                     {newDate ? format(newDate, "PPP") : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>
@@ -410,7 +468,6 @@ const Calendar = () => {
                     selected={newDate}
                     onSelect={setNewDate}
                     initialFocus
-                    className="pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
@@ -424,7 +481,7 @@ const Calendar = () => {
             <Button
               variant="default"
               onClick={handleMarkCompleted}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
             >
               <CheckCircle2 className="w-4 h-4 mr-2" />
               Mark Completed
@@ -439,8 +496,104 @@ const Calendar = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Completion Dialog */}
+      <Dialog open={showCompletionDialog} onOpenChange={setShowCompletionDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Complete Maintenance</DialogTitle>
+            <DialogDescription>
+              Document the completed maintenance for {selectedEvent?.name}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="type">Maintenance Type *</Label>
+              <Input
+                id="type"
+                placeholder="e.g., Filter replacement, Annual inspection"
+                value={maintenanceType}
+                onChange={(e) => setMaintenanceType(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="vendor">Service Vendor (Optional)</Label>
+              <Select value={vendorId} onValueChange={setVendorId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a vendor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {vendors.map((vendor) => (
+                    <SelectItem key={vendor.id} value={vendor.id}>
+                      {vendor.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cost">Cost ($)</Label>
+              <Input
+                id="cost"
+                type="number"
+                placeholder="0.00"
+                value={cost}
+                onChange={(e) => setCost(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                placeholder="Additional details about the maintenance..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={4}
+              />
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="before-photo">Before Photo</Label>
+                <Input
+                  id="before-photo"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setBeforePhoto(e.target.files?.[0])}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="after-photo">After Photo</Label>
+                <Input
+                  id="after-photo"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setAfterPhoto(e.target.files?.[0])}
+                />
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCompletionDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveCompletion}
+              disabled={!maintenanceType}
+              className="bg-gradient-to-r from-blue-600 to-purple-600"
+            >
+              Save & Complete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
 
-export default Calendar;
+export default EnhancedCalendar;
