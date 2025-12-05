@@ -86,9 +86,7 @@ export const Footer = () => {
           <p className="text-sm text-muted-foreground">
             © {new Date().getFullYear()} FixSense. All rights reserved.
           </p>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span>Powered by Google Gemini AI</span>
-          </div>
+          
         </div>
       </div>
     </footer>
