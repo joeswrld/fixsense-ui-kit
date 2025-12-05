@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +31,9 @@ import {
   Download, 
   Calendar,
   History,
+  Wrench,
+  LogOut,
+  Crown,
 } from "lucide-react";
 import { format } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -38,6 +41,13 @@ import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useCurrency } from "@/hooks/useCurrency";
+import { User } from "@supabase/supabase-js";
+
+interface Profile {
+  subscription_tier: string;
+  subscription_status: string;
+  country: string | null;
+}
 
 const EnhancedCalendar = () => {
   const navigate = useNavigate();
@@ -54,8 +64,89 @@ const EnhancedCalendar = () => {
   const [beforePhoto, setBeforePhoto] = useState(null);
   const [afterPhoto, setAfterPhoto] = useState(null);
 
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+
   const queryClient = useQueryClient();
   const { format: formatCurrency, symbol } = useCurrency();
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user ?? null);
+        if (!session?.user) {
+          navigate("/auth");
+        }
+      }
+    );
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (!session?.user) {
+        navigate("/auth");
+      } else {
+        fetchProfile(session.user.id);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("subscription_tier, subscription_status, country")
+        .eq("id", userId)
+        .single();
+
+      if (profileError) throw profileError;
+      setProfile(profileData);
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    toast.success("Signed out successfully");
+    navigate("/");
+  };
+
+  const getSubscriptionBadge = () => {
+    if (!profile) return null;
+    
+    const tier = profile.subscription_tier || "free";
+    const isActive = profile.subscription_status === "active";
+
+    if (tier === "free") {
+      return (
+        <Badge variant="secondary" className="text-xs">
+          Free
+        </Badge>
+      );
+    }
+
+    if (tier === "pro") {
+      return (
+        <Badge variant="default" className="text-xs gap-1">
+          <Crown className="w-3 h-3" />
+          Pro
+        </Badge>
+      );
+    }
+
+    if (tier === "business") {
+      return (
+        <Badge variant="default" className="text-xs gap-1 bg-gradient-to-r from-purple-500 to-pink-500">
+          <Crown className="w-3 h-3" />
+          Business
+        </Badge>
+      );
+    }
+
+    return null;
+  };
 
   // Fetch scheduled maintenance (appliances with next_maintenance_date)
   const { data: events = [], isLoading: eventsLoading } = useQuery({
@@ -326,109 +417,147 @@ const EnhancedCalendar = () => {
 
   if (eventsLoading || historyLoading) {
     return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-accent/10">
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-16 items-center justify-between px-4">
+          <Link to="/dashboard" className="flex items-center gap-2 font-bold text-xl">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+              <Wrench className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <span>FixSense</span>
+          </Link>
+
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:flex flex-col items-end gap-1">
+              <span className="text-sm text-muted-foreground">
+                {user?.email}
+              </span>
+              <div className="flex items-center gap-2">
+                {getSubscriptionBadge()}
+              </div>
+            </div>
+            <div className="sm:hidden">
+              {getSubscriptionBadge()}
+            </div>
+            <Button variant="ghost" size="sm" onClick={handleSignOut}>
+              <LogOut className="w-4 h-4 mr-2" />
+              Sign Out
+            </Button>
+          </div>
+        </div>
+      </header>
+
       <main className="container px-4 py-8">
         <div className="max-w-6xl mx-auto space-y-6">
           <Button variant="ghost" onClick={() => navigate("/dashboard")}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Dashboard
           </Button>
-          <div className="min-h-screen flex items-center justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Maintenance Calendar
+              </h1>
+              <p className="text-slate-600">View scheduled and completed maintenance</p>
+            </div>
+            <Button className="bg-gradient-to-r from-blue-600 to-purple-600">
+              <Download className="w-4 h-4 mr-2" />
+              Export Calendar
+            </Button>
           </div>
-        </div>
-      </main>
-    );
-  }
 
-  return (
-    <main className="container px-4 py-8">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <Button variant="ghost" onClick={() => navigate("/dashboard")}>
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Dashboard
-        </Button>
-
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Maintenance Calendar
-            </h1>
-            <p className="text-slate-600">View scheduled and completed maintenance</p>
-          </div>
-          <Button className="bg-gradient-to-r from-blue-600 to-purple-600">
-            <Download className="w-4 h-4 mr-2" />
-            Export Calendar
-          </Button>
-        </div>
-
-        <div className="grid lg:grid-cols-2 gap-6">
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle>Maintenance Schedule</CardTitle>
-              <CardDescription>
-                <span className="inline-flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-blue-500"></span>
-                  Scheduled
-                  <span className="w-3 h-3 rounded-full bg-green-500 ml-2"></span>
-                  Completed
-                </span>
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex justify-center">
-              <CalendarComponent
-                mode="single"
-                selected={selectedDate}
-                onSelect={setSelectedDate}
-                className="rounded-md border"
-                modifiers={{
-                  scheduled: datesWithEvents,
-                  completed: datesWithHistory,
-                }}
-                modifiersStyles={{
-                  scheduled: {
-                    backgroundColor: "rgb(59 130 246)",
-                    color: "white",
-                    fontWeight: "bold",
-                  },
-                  completed: {
-                    backgroundColor: "rgb(34 197 94)",
-                    color: "white",
-                    fontWeight: "bold",
-                  },
-                }}
-              />
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle>
-                {selectedDate
-                  ? format(selectedDate, "MMMM d, yyyy")
-                  : "Upcoming Maintenance"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="scheduled" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="scheduled">
-                    <Calendar className="w-4 h-4 mr-2" />
+          <div className="grid lg:grid-cols-2 gap-6">
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle>Maintenance Schedule</CardTitle>
+                <CardDescription>
+                  <span className="inline-flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-blue-500"></span>
                     Scheduled
-                  </TabsTrigger>
-                  <TabsTrigger value="history">
-                    <History className="w-4 h-4 mr-2" />
-                    History
-                  </TabsTrigger>
-                </TabsList>
+                    <span className="w-3 h-3 rounded-full bg-green-500 ml-2"></span>
+                    Completed
+                  </span>
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex justify-center">
+                <CalendarComponent
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={setSelectedDate}
+                  className="rounded-md border"
+                  modifiers={{
+                    scheduled: datesWithEvents,
+                    completed: datesWithHistory,
+                  }}
+                  modifiersStyles={{
+                    scheduled: {
+                      backgroundColor: "rgb(59 130 246)",
+                      color: "white",
+                      fontWeight: "bold",
+                    },
+                    completed: {
+                      backgroundColor: "rgb(34 197 94)",
+                      color: "white",
+                      fontWeight: "bold",
+                    },
+                  }}
+                />
+              </CardContent>
+            </Card>
 
-                <TabsContent value="scheduled" className="space-y-3 mt-4">
-                  {selectedDate ? (
-                    getEventsForDate(selectedDate).length === 0 ? (
-                      <p className="text-center text-slate-500 py-8">
-                        No maintenance scheduled for this date
-                      </p>
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle>
+                  {selectedDate
+                    ? format(selectedDate, "MMMM d, yyyy")
+                    : "Upcoming Maintenance"}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="scheduled" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="scheduled">
+                      <Calendar className="w-4 h-4 mr-2" />
+                      Scheduled
+                    </TabsTrigger>
+                    <TabsTrigger value="history">
+                      <History className="w-4 h-4 mr-2" />
+                      History
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="scheduled" className="space-y-3 mt-4">
+                    {selectedDate ? (
+                      getEventsForDate(selectedDate).length === 0 ? (
+                        <p className="text-center text-slate-500 py-8">
+                          No maintenance scheduled for this date
+                        </p>
+                      ) : (
+                        getEventsForDate(selectedDate).map((event) => (
+                          <div
+                            key={event.id}
+                            className="p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer border-l-4 border-blue-500"
+                            onClick={() => {
+                              setSelectedEvent(event);
+                              setShowDialog(true);
+                            }}
+                          >
+                            <p className="font-semibold text-lg">{event.name}</p>
+                            <p className="text-sm text-slate-600">{event.property.name}</p>
+                            <Badge variant="outline" className="mt-2">{event.type}</Badge>
+                          </div>
+                        ))
+                      )
                     ) : (
-                      getEventsForDate(selectedDate).map((event) => (
+                      events.slice(0, 10).map((event) => (
                         <div
                           key={event.id}
                           className="p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer border-l-4 border-blue-500"
@@ -439,41 +568,50 @@ const EnhancedCalendar = () => {
                         >
                           <p className="font-semibold text-lg">{event.name}</p>
                           <p className="text-sm text-slate-600">{event.property.name}</p>
-                          <Badge variant="outline" className="mt-2">{event.type}</Badge>
+                          <div className="flex items-center gap-2 mt-2">
+                            <Badge variant="outline">{event.type}</Badge>
+                            <span className="text-sm text-slate-500">
+                              {format(new Date(event.next_maintenance_date), "MMM d, yyyy")}
+                            </span>
+                          </div>
                         </div>
                       ))
-                    )
-                  ) : (
-                    events.slice(0, 10).map((event) => (
-                      <div
-                        key={event.id}
-                        className="p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer border-l-4 border-blue-500"
-                        onClick={() => {
-                          setSelectedEvent(event);
-                          setShowDialog(true);
-                        }}
-                      >
-                        <p className="font-semibold text-lg">{event.name}</p>
-                        <p className="text-sm text-slate-600">{event.property.name}</p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <Badge variant="outline">{event.type}</Badge>
-                          <span className="text-sm text-slate-500">
-                            {format(new Date(event.next_maintenance_date), "MMM d, yyyy")}
-                          </span>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </TabsContent>
+                    )}
+                  </TabsContent>
 
-                <TabsContent value="history" className="space-y-3 mt-4">
-                  {selectedDate ? (
-                    getHistoryForDate(selectedDate).length === 0 ? (
-                      <p className="text-center text-slate-500 py-8">
-                        No completed maintenance on this date
-                      </p>
+                  <TabsContent value="history" className="space-y-3 mt-4">
+                    {selectedDate ? (
+                      getHistoryForDate(selectedDate).length === 0 ? (
+                        <p className="text-center text-slate-500 py-8">
+                          No completed maintenance on this date
+                        </p>
+                      ) : (
+                        getHistoryForDate(selectedDate).map((record) => (
+                          <div
+                            key={record.id}
+                            className="p-4 bg-green-50 rounded-lg border-l-4 border-green-500"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <p className="font-semibold text-lg">{record.maintenance_type}</p>
+                                <p className="text-sm text-slate-600">
+                                  {record.appliance_name} • {record.property_name}
+                                </p>
+                              </div>
+                              {record.cost && (
+                                <div className="font-semibold text-green-600">
+                                  {formatCurrency(record.cost)}
+                                </div>
+                              )}
+                            </div>
+                            {record.notes && (
+                              <p className="text-sm text-slate-600 mt-2">{record.notes}</p>
+                            )}
+                          </div>
+                        ))
+                      )
                     ) : (
-                      getHistoryForDate(selectedDate).map((record) => (
+                      history.slice(0, 10).map((record) => (
                         <div
                           key={record.id}
                           className="p-4 bg-green-50 rounded-lg border-l-4 border-green-500"
@@ -484,6 +622,9 @@ const EnhancedCalendar = () => {
                               <p className="text-sm text-slate-600">
                                 {record.appliance_name} • {record.property_name}
                               </p>
+                              <span className="text-sm text-slate-500">
+                                {format(new Date(record.maintenance_date), "MMM d, yyyy")}
+                              </span>
                             </div>
                             {record.cost && (
                               <div className="font-semibold text-green-600">
@@ -496,255 +637,228 @@ const EnhancedCalendar = () => {
                           )}
                         </div>
                       ))
-                    )
-                  ) : (
-                    history.slice(0, 10).map((record) => (
-                      <div
-                        key={record.id}
-                        className="p-4 bg-green-50 rounded-lg border-l-4 border-green-500"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <p className="font-semibold text-lg">{record.maintenance_type}</p>
-                            <p className="text-sm text-slate-600">
-                              {record.appliance_name} • {record.property_name}
-                            </p>
-                            <span className="text-sm text-slate-500">
-                              {format(new Date(record.maintenance_date), "MMM d, yyyy")}
-                            </span>
-                          </div>
-                          {record.cost && (
-                            <div className="font-semibold text-green-600">
-                              {formatCurrency(record.cost)}
-                            </div>
-                          )}
-                        </div>
-                        {record.notes && (
-                          <p className="text-sm text-slate-600 mt-2">{record.notes}</p>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-        </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </div>
 
-        {/* Statistics Cards */}
-        <div className="grid md:grid-cols-3 gap-4">
-          <Card className="shadow-lg">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-600">Upcoming (30 days)</p>
-                  <p className="text-3xl font-bold text-blue-600">{upcomingCount}</p>
+          {/* Statistics Cards */}
+          <div className="grid md:grid-cols-3 gap-4">
+            <Card className="shadow-lg">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-600">Upcoming (30 days)</p>
+                    <p className="text-3xl font-bold text-blue-600">{upcomingCount}</p>
+                  </div>
+                  <Calendar className="w-10 h-10 text-blue-600 opacity-20" />
                 </div>
-                <Calendar className="w-10 h-10 text-blue-600 opacity-20" />
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card className="shadow-lg">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-600">Completed This Month</p>
-                  <p className="text-3xl font-bold text-green-600">{completedThisMonth}</p>
+            <Card className="shadow-lg">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-600">Completed This Month</p>
+                    <p className="text-3xl font-bold text-green-600">{completedThisMonth}</p>
+                  </div>
+                  <CheckCircle2 className="w-10 h-10 text-green-600 opacity-20" />
                 </div>
-                <CheckCircle2 className="w-10 h-10 text-green-600 opacity-20" />
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card className="shadow-lg">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
+            <Card className="shadow-lg">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-600">Total Spent (Month)</p>
+                    <p className="text-3xl font-bold text-purple-600">
+                      {formatCurrency(totalSpentThisMonth)}
+                    </p>
+                  </div>
+                  <Download className="w-10 h-10 text-purple-600 opacity-20" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Event Details Dialog */}
+          <Dialog open={showDialog} onOpenChange={setShowDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{selectedEvent?.name}</DialogTitle>
+                <DialogDescription>
+                  {selectedEvent?.property.name} • {selectedEvent?.type}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4 py-4">
                 <div>
-                  <p className="text-sm text-slate-600">Total Spent (Month)</p>
-                  <p className="text-3xl font-bold text-purple-600">
-                    {formatCurrency(totalSpentThisMonth)}
+                  <p className="text-sm font-medium mb-2">Current Maintenance Date</p>
+                  <p className="text-sm text-slate-600">
+                    {selectedEvent && format(new Date(selectedEvent.next_maintenance_date), "MMMM d, yyyy")}
                   </p>
                 </div>
-                <Download className="w-10 h-10 text-purple-600 opacity-20" />
+
+                <div>
+                  <p className="text-sm font-medium mb-2">Reschedule to</p>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !newDate && "text-slate-500"
+                        )}
+                      >
+                        <Calendar className="mr-2 h-4 w-4" />
+                        {newDate ? format(newDate, "PPP") : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={newDate}
+                        onSelect={setNewDate}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        </div>
 
-        {/* Event Details Dialog */}
-        <Dialog open={showDialog} onOpenChange={setShowDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{selectedEvent?.name}</DialogTitle>
-              <DialogDescription>
-                {selectedEvent?.property.name} • {selectedEvent?.type}
-              </DialogDescription>
-            </DialogHeader>
+              <DialogFooter className="flex-col sm:flex-row gap-2">
+                <Button variant="outline" onClick={() => setShowDialog(false)} className="w-full sm:w-auto">
+                  Cancel
+                </Button>
+                <Button
+                  variant="default"
+                  onClick={handleMarkCompleted}
+                  className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
+                >
+                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                  Mark Completed
+                </Button>
+                <Button
+                  onClick={handleReschedule}
+                  disabled={!newDate || rescheduleMutation.isPending}
+                  className="w-full sm:w-auto"
+                >
+                  {rescheduleMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                  Reschedule
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
-            <div className="space-y-4 py-4">
-              <div>
-                <p className="text-sm font-medium mb-2">Current Maintenance Date</p>
-                <p className="text-sm text-slate-600">
-                  {selectedEvent && format(new Date(selectedEvent.next_maintenance_date), "MMMM d, yyyy")}
-                </p>
-              </div>
+          {/* Completion Dialog */}
+          <Dialog open={showCompletionDialog} onOpenChange={setShowCompletionDialog}>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Complete Maintenance</DialogTitle>
+                <DialogDescription>
+                  Document the completed maintenance for {selectedEvent?.name}
+                </DialogDescription>
+              </DialogHeader>
 
-              <div>
-                <p className="text-sm font-medium mb-2">Reschedule to</p>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !newDate && "text-slate-500"
-                      )}
-                    >
-                      <Calendar className="mr-2 h-4 w-4" />
-                      {newDate ? format(newDate, "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <CalendarComponent
-                      mode="single"
-                      selected={newDate}
-                      onSelect={setNewDate}
-                      initialFocus
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="type">Maintenance Type *</Label>
+                  <Input
+                    id="type"
+                    placeholder="e.g., Filter replacement, Annual inspection"
+                    value={maintenanceType}
+                    onChange={(e) => setMaintenanceType(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="vendor">Service Vendor (Optional)</Label>
+                  <Select value={vendorId} onValueChange={setVendorId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a vendor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {vendors.map((vendor) => (
+                        <SelectItem key={vendor.id} value={vendor.id}>
+                          {vendor.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="cost">Cost ({symbol})</Label>
+                  <Input
+                    id="cost"
+                    type="number"
+                    placeholder="0.00"
+                    value={cost}
+                    onChange={(e) => setCost(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Notes</Label>
+                  <Textarea
+                    id="notes"
+                    placeholder="Additional details about the maintenance..."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    rows={4}
+                  />
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="before-photo">Before Photo</Label>
+                    <Input
+                      id="before-photo"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setBeforePhoto(e.target.files?.[0])}
                     />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-
-            <DialogFooter className="flex-col sm:flex-row gap-2">
-              <Button variant="outline" onClick={() => setShowDialog(false)} className="w-full sm:w-auto">
-                Cancel
-              </Button>
-              <Button
-                variant="default"
-                onClick={handleMarkCompleted}
-                className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
-              >
-                <CheckCircle2 className="w-4 h-4 mr-2" />
-                Mark Completed
-              </Button>
-              <Button
-                onClick={handleReschedule}
-                disabled={!newDate || rescheduleMutation.isPending}
-                className="w-full sm:w-auto"
-              >
-                {rescheduleMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                Reschedule
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Completion Dialog */}
-        <Dialog open={showCompletionDialog} onOpenChange={setShowCompletionDialog}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Complete Maintenance</DialogTitle>
-              <DialogDescription>
-                Document the completed maintenance for {selectedEvent?.name}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="type">Maintenance Type *</Label>
-                <Input
-                  id="type"
-                  placeholder="e.g., Filter replacement, Annual inspection"
-                  value={maintenanceType}
-                  onChange={(e) => setMaintenanceType(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="vendor">Service Vendor (Optional)</Label>
-                <Select value={vendorId} onValueChange={setVendorId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a vendor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {vendors.map((vendor) => (
-                      <SelectItem key={vendor.id} value={vendor.id}>
-                        {vendor.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="cost">Cost ({symbol})</Label>
-                <Input
-                  id="cost"
-                  type="number"
-                  placeholder="0.00"
-                  value={cost}
-                  onChange={(e) => setCost(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  placeholder="Additional details about the maintenance..."
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={4}
-                />
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="before-photo">Before Photo</Label>
-                  <Input
-                    id="before-photo"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setBeforePhoto(e.target.files?.[0])}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="after-photo">After Photo</Label>
-                  <Input
-                    id="after-photo"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setAfterPhoto(e.target.files?.[0])}
-                  />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="after-photo">After Photo</Label>
+                    <Input
+                      id="after-photo"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setAfterPhoto(e.target.files?.[0])}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowCompletionDialog(false)}>
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSaveCompletion}
-                disabled={!maintenanceType || completeMutation.isPending}
-                className="bg-gradient-to-r from-blue-600 to-purple-600"
-              >
-                {completeMutation.isPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  "Save & Complete"
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-    </main>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowCompletionDialog(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSaveCompletion}
+                  disabled={!maintenanceType || completeMutation.isPending}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600"
+                >
+                  {completeMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save & Complete"
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </main>
+    </div>
   );
 };
 
