@@ -1,0 +1,143 @@
+{
+  "common": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès",
+    "back": "Retour",
+    "next": "Suivant",
+    "submit": "Soumettre",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "view": "Voir",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "export": "Exporter",
+    "signOut": "Déconnexion"
+  },
+  "nav": {
+    "dashboard": "Tableau de bord",
+    "diagnose": "Diagnostiquer",
+    "properties": "Propriétés",
+    "calendar": "Calendrier",
+    "history": "Historique",
+    "settings": "Paramètres"
+  },
+  "landing": {
+    "hero": {
+      "title": "Diagnostic d'Appareils par IA",
+      "subtitle": "Obtenez des estimations de réparation instantanées, une protection contre les arnaques et un suivi de maintenance pour vos propriétés locatives",
+      "getStarted": "Commencer",
+      "goToDashboard": "Aller au Tableau de bord",
+      "watchDemo": "Voir la Démo"
+    },
+    "features": {
+      "title": "Pourquoi choisir FixSense?",
+      "aiDiagnosis": "Diagnostic IA",
+      "aiDiagnosisDesc": "Téléchargez des photos, vidéos ou audio pour un diagnostic instantané",
+      "costEstimates": "Estimations de Coûts",
+      "costEstimatesDesc": "Obtenez des fourchettes de prix précises selon votre emplacement",
+      "scamProtection": "Protection contre les Arnaques",
+      "scamProtectionDesc": "Évitez de surpayer avec notre système d'alerte"
+    },
+    "pricing": {
+      "title": "Tarification Simple et Transparente",
+      "free": "Gratuit",
+      "pro": "Pro",
+      "business": "Entreprise",
+      "perMonth": "/mois"
+    }
+  },
+  "dashboard": {
+    "title": "Tableau de bord",
+    "welcome": "Bienvenue",
+    "estimatedSavings": "Économies Estimées",
+    "diagnosticsRun": "Diagnostics Effectués",
+    "properties": "Propriétés",
+    "quickActions": "Actions Rapides",
+    "diagnoseNow": "Diagnostiquer un Problème",
+    "viewHistory": "Voir l'Historique",
+    "manageProperties": "Gérer les Propriétés"
+  },
+  "diagnose": {
+    "title": "Diagnostiquez votre Appareil",
+    "uploadPhoto": "Télécharger une Photo",
+    "uploadVideo": "Télécharger une Vidéo",
+    "uploadAudio": "Télécharger un Audio",
+    "describeIssue": "Décrire le Problème",
+    "analyzing": "Analyse en cours...",
+    "result": {
+      "title": "Résultat du Diagnostic",
+      "summary": "Résumé",
+      "probableCauses": "Causes Probables",
+      "estimatedCost": "Coût de Réparation Estimé",
+      "urgency": "Niveau d'Urgence",
+      "fixInstructions": "Comment Réparer",
+      "scamAlerts": "Alertes d'Arnaque"
+    }
+  },
+  "settings": {
+    "title": "Paramètres",
+    "subtitle": "Gérez votre compte et vos préférences",
+    "tabs": {
+      "profile": "Profil",
+      "billing": "Facturation",
+      "notifications": "Notifications",
+      "privacy": "Confidentialité"
+    },
+    "profile": {
+      "title": "Informations du Profil",
+      "description": "Mettez à jour vos informations personnelles",
+      "fullName": "Nom Complet",
+      "email": "Email",
+      "country": "Pays",
+      "phone": "Numéro de Téléphone",
+      "currency": "Devise Préférée",
+      "language": "Langue",
+      "saveChanges": "Enregistrer les Modifications"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "emailTitle": "Notifications par Email",
+      "emailDescription": "Choisissez quelles notifications email vous souhaitez recevoir",
+      "pushTitle": "Notifications Push",
+      "pushDescription": "Recevez des alertes en temps réel dans votre navigateur",
+      "enablePush": "Activer les Notifications Push",
+      "maintenanceReminders": "Rappels de Maintenance",
+      "maintenanceRemindersDesc": "Soyez averti quand les appareils nécessitent une maintenance",
+      "warrantyExpiration": "Alertes d'Expiration de Garantie",
+      "warrantyExpirationDesc": "Soyez averti 30 jours avant l'expiration",
+      "criticalDiagnostics": "Alertes de Diagnostics Critiques",
+      "criticalDiagnosticsDesc": "Recevez des alertes immédiates pour les problèmes critiques",
+      "weeklySummary": "Résumé Hebdomadaire",
+      "weeklySummaryDesc": "Recevez un digest hebdomadaire de l'état de maintenance",
+      "bookingConfirmations": "Confirmations de Réservation",
+      "bookingConfirmationsDesc": "Soyez averti quand des rendez-vous sont programmés"
+    },
+    "privacy": {
+      "title": "Confidentialité et Données",
+      "exportData": "Exporter Mes Données",
+      "deleteAccount": "Supprimer le Compte"
+    }
+  },
+  "properties": {
+    "title": "Propriétés",
+    "addProperty": "Ajouter une Propriété",
+    "noProperties": "Aucune propriété",
+    "appliances": "Appareils"
+  },
+  "vendors": {
+    "title": "Prestataires",
+    "addVendor": "Ajouter un Prestataire",
+    "bookService": "Réserver un Service"
+  },
+  "footer": {
+    "company": "Entreprise",
+    "aboutUs": "À Propos",
+    "contact": "Contact",
+    "privacyPolicy": "Politique de Confidentialité",
+    "termsOfService": "Conditions d'Utilisation",
+    "poweredBy": "Propulsé par Google Gemini AI"
+  }
+}
