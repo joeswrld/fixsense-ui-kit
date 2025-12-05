@@ -124,7 +124,7 @@ const Landing = () => {
           {/* Bottom Bar */}
           <div className="pt-8 border-t text-center text-sm text-muted-foreground">
             <p>&copy; {new Date().getFullYear()} FixSense. All rights reserved.</p>
-            <p className="mt-2">Powered by Google Gemini AI</p>
+            
           </div>
         </div>
       </footer>
