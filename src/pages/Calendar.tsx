@@ -327,9 +327,17 @@ const EnhancedCalendar = () => {
 
   if (eventsLoading || historyLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
+      <main className="container px-4 py-8">
+        <div className="max-w-6xl mx-auto space-y-6">
+          <Button variant="ghost" onClick={() => navigate("/dashboard")}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
+          </Button>
+          <div className="min-h-screen flex items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        </div>
+      </main>
     );
   }
 
@@ -341,20 +349,18 @@ const EnhancedCalendar = () => {
           Back to Dashboard
         </Button>
 
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8">
-          <div className="max-w-7xl mx-auto space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Maintenance Calendar
-                </h1>
-                <p className="text-slate-600">View scheduled and completed maintenance</p>
-              </div>
-              <Button className="bg-gradient-to-r from-blue-600 to-purple-600">
-                <Download className="w-4 h-4 mr-2" />
-                Export Calendar
-              </Button>
-            </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Maintenance Calendar
+            </h1>
+            <p className="text-slate-600">View scheduled and completed maintenance</p>
+          </div>
+          <Button className="bg-gradient-to-r from-blue-600 to-purple-600">
+            <Download className="w-4 h-4 mr-2" />
+            Export Calendar
+          </Button>
+        </div>
 
         <div className="grid lg:grid-cols-2 gap-6">
           <Card className="shadow-lg">
@@ -566,180 +572,180 @@ const EnhancedCalendar = () => {
             </CardContent>
           </Card>
         </div>
-      </div>
 
-      {/* Event Details Dialog */}
-      <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{selectedEvent?.name}</DialogTitle>
-            <DialogDescription>
-              {selectedEvent?.property.name} • {selectedEvent?.type}
-            </DialogDescription>
-          </DialogHeader>
+        {/* Event Details Dialog */}
+        <Dialog open={showDialog} onOpenChange={setShowDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{selectedEvent?.name}</DialogTitle>
+              <DialogDescription>
+                {selectedEvent?.property.name} • {selectedEvent?.type}
+              </DialogDescription>
+            </DialogHeader>
 
-          <div className="space-y-4 py-4">
-            <div>
-              <p className="text-sm font-medium mb-2">Current Maintenance Date</p>
-              <p className="text-sm text-slate-600">
-                {selectedEvent && format(new Date(selectedEvent.next_maintenance_date), "MMMM d, yyyy")}
-              </p>
+            <div className="space-y-4 py-4">
+              <div>
+                <p className="text-sm font-medium mb-2">Current Maintenance Date</p>
+                <p className="text-sm text-slate-600">
+                  {selectedEvent && format(new Date(selectedEvent.next_maintenance_date), "MMMM d, yyyy")}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium mb-2">Reschedule to</p>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !newDate && "text-slate-500"
+                      )}
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {newDate ? format(newDate, "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={newDate}
+                      onSelect={setNewDate}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
 
-            <div>
-              <p className="text-sm font-medium mb-2">Reschedule to</p>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !newDate && "text-slate-500"
-                    )}
-                  >
-                    <Calendar className="mr-2 h-4 w-4" />
-                    {newDate ? format(newDate, "PPP") : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <CalendarComponent
-                    mode="single"
-                    selected={newDate}
-                    onSelect={setNewDate}
-                    initialFocus
+            <DialogFooter className="flex-col sm:flex-row gap-2">
+              <Button variant="outline" onClick={() => setShowDialog(false)} className="w-full sm:w-auto">
+                Cancel
+              </Button>
+              <Button
+                variant="default"
+                onClick={handleMarkCompleted}
+                className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
+              >
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+                Mark Completed
+              </Button>
+              <Button
+                onClick={handleReschedule}
+                disabled={!newDate || rescheduleMutation.isPending}
+                className="w-full sm:w-auto"
+              >
+                {rescheduleMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                Reschedule
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Completion Dialog */}
+        <Dialog open={showCompletionDialog} onOpenChange={setShowCompletionDialog}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Complete Maintenance</DialogTitle>
+              <DialogDescription>
+                Document the completed maintenance for {selectedEvent?.name}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="type">Maintenance Type *</Label>
+                <Input
+                  id="type"
+                  placeholder="e.g., Filter replacement, Annual inspection"
+                  value={maintenanceType}
+                  onChange={(e) => setMaintenanceType(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="vendor">Service Vendor (Optional)</Label>
+                <Select value={vendorId} onValueChange={setVendorId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a vendor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vendors.map((vendor) => (
+                      <SelectItem key={vendor.id} value={vendor.id}>
+                        {vendor.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cost">Cost ({symbol})</Label>
+                <Input
+                  id="cost"
+                  type="number"
+                  placeholder="0.00"
+                  value={cost}
+                  onChange={(e) => setCost(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notes">Notes</Label>
+                <Textarea
+                  id="notes"
+                  placeholder="Additional details about the maintenance..."
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={4}
+                />
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="before-photo">Before Photo</Label>
+                  <Input
+                    id="before-photo"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setBeforePhoto(e.target.files?.[0])}
                   />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
-
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={() => setShowDialog(false)} className="w-full sm:w-auto">
-              Cancel
-            </Button>
-            <Button
-              variant="default"
-              onClick={handleMarkCompleted}
-              className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
-            >
-              <CheckCircle2 className="w-4 h-4 mr-2" />
-              Mark Completed
-            </Button>
-            <Button
-              onClick={handleReschedule}
-              disabled={!newDate || rescheduleMutation.isPending}
-              className="w-full sm:w-auto"
-            >
-              {rescheduleMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-              Reschedule
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Completion Dialog */}
-      <Dialog open={showCompletionDialog} onOpenChange={setShowCompletionDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Complete Maintenance</DialogTitle>
-            <DialogDescription>
-              Document the completed maintenance for {selectedEvent?.name}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="type">Maintenance Type *</Label>
-              <Input
-                id="type"
-                placeholder="e.g., Filter replacement, Annual inspection"
-                value={maintenanceType}
-                onChange={(e) => setMaintenanceType(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="vendor">Service Vendor (Optional)</Label>
-              <Select value={vendorId} onValueChange={setVendorId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a vendor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {vendors.map((vendor) => (
-                    <SelectItem key={vendor.id} value={vendor.id}>
-                      {vendor.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="cost">Cost ({symbol})</Label>
-              <Input
-                id="cost"
-                type="number"
-                placeholder="0.00"
-                value={cost}
-                onChange={(e) => setCost(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                placeholder="Additional details about the maintenance..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={4}
-              />
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="before-photo">Before Photo</Label>
-                <Input
-                  id="before-photo"
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setBeforePhoto(e.target.files?.[0])}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="after-photo">After Photo</Label>
-                <Input
-                  id="after-photo"
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setAfterPhoto(e.target.files?.[0])}
-                />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="after-photo">After Photo</Label>
+                  <Input
+                    id="after-photo"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setAfterPhoto(e.target.files?.[0])}
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCompletionDialog(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSaveCompletion}
-              disabled={!maintenanceType || completeMutation.isPending}
-              className="bg-gradient-to-r from-blue-600 to-purple-600"
-            >
-              {completeMutation.isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                "Save & Complete"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCompletionDialog(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveCompletion}
+                disabled={!maintenanceType || completeMutation.isPending}
+                className="bg-gradient-to-r from-blue-600 to-purple-600"
+              >
+                {completeMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save & Complete"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </main>
   );
 };
 
