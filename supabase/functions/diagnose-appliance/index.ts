@@ -120,88 +120,95 @@ serve(async (req) => {
       );
     }
 
-    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
-    if (!lovableApiKey) {
-      throw new Error('LOVABLE_API_KEY is not configured');
+    const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
+    if (!geminiApiKey) {
+      throw new Error('GEMINI_API_KEY is not configured');
     }
 
-    // Build the prompt for AI analysis
+    // Get user's country and currency for localized pricing
+    const { data: userProfile } = await supabase
+      .from('profiles')
+      .select('country, currency')
+      .eq('id', user.id)
+      .single();
+
+    const userCountry = userProfile?.country || 'NG';
+    const userCurrency = userProfile?.currency || 'NGN';
+
+    // Build the prompt for AI analysis with user's country context
     const systemPrompt = `You are an expert appliance repair diagnostic AI. Analyze the provided input and return a detailed diagnosis in JSON format with the following structure:
 {
   "diagnosis_summary": "A clear, concise summary of the issue (2-3 sentences)",
   "probable_causes": ["Most likely cause", "Second likely cause", "Third possible cause"],
-  "estimated_cost_min": number (minimum repair cost in Naira),
-  "estimated_cost_max": number (maximum repair cost in Naira),
+  "estimated_cost_min": number (minimum repair cost in ${userCurrency}),
+  "estimated_cost_max": number (maximum repair cost in ${userCurrency}),
   "urgency": "critical" | "warning" | "safe",
   "scam_alerts": ["Common scam alert 1", "Overpricing warning 2"],
   "fix_instructions": "Detailed step-by-step repair instructions with safety warnings"
 }
 
 Guidelines:
-- Use Nigerian Naira (₦) for all cost estimates
-- Be realistic about costs (research typical Nigerian appliance repair prices)
+- The user is located in ${userCountry}. Use ${userCurrency} for all cost estimates.
+- Be realistic about costs - research typical appliance repair prices for ${userCountry}.
 - Focus on common appliance issues: AC units, refrigerators, washing machines, microwaves, etc.
-- Include scam protection warnings about overpricing or unnecessary replacements
+- Include scam protection warnings about overpricing or unnecessary replacements common in ${userCountry}.
 - Urgency levels: critical (immediate danger/total failure), warning (needs attention soon), safe (minor issue)
 - Provide practical DIY steps when safe, otherwise recommend professional help`;
 
     const userPrompt = description || "Diagnose the appliance issue shown in the provided media.";
 
-    const messages: any[] = [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt }
-    ];
-
-    // If there's a file URL and it's an image, add it to the prompt
+    console.log('Calling Google Gemini API for analysis...');
+    
+    // Build parts for Gemini API
+    const parts: any[] = [{ text: systemPrompt + "\n\nUser input: " + userPrompt }];
+    
+    // If there's a file URL and it's an image, add it
     if (fileUrl && inputType === 'photo') {
       const filePath = fileUrl.split('/').slice(-2).join('/');
       const { data: signedUrlData, error: signedUrlError } = await supabase.storage
         .from('diagnostics')
         .createSignedUrl(filePath, 3600);
 
-      if (signedUrlError) {
-        console.error('Error creating signed URL:', signedUrlError);
-      } else if (signedUrlData?.signedUrl) {
-        messages[1] = {
-          role: "user",
-          content: [
-            { type: "text", text: userPrompt },
-            { type: "image_url", image_url: { url: signedUrlData.signedUrl } }
-          ]
-        };
+      if (!signedUrlError && signedUrlData?.signedUrl) {
+        // Fetch the image and convert to base64
+        try {
+          const imageResponse = await fetch(signedUrlData.signedUrl);
+          const imageBuffer = await imageResponse.arrayBuffer();
+          const base64Image = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)));
+          const mimeType = imageResponse.headers.get('content-type') || 'image/jpeg';
+          
+          parts.push({
+            inline_data: {
+              mime_type: mimeType,
+              data: base64Image
+            }
+          });
+        } catch (imgError) {
+          console.error('Error processing image:', imgError);
+        }
       }
     }
 
-    console.log('Calling Lovable AI for analysis...');
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${lovableApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages,
-        response_format: { type: "json_object" }
+        contents: [{ parts }],
+        generationConfig: {
+          responseMimeType: "application/json"
+        }
       }),
     });
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
-      console.error('AI gateway error:', aiResponse.status, errorText);
+      console.error('Gemini API error:', aiResponse.status, errorText);
       
       if (aiResponse.status === 429) {
         return new Response(JSON.stringify({ 
           error: 'AI service rate limit exceeded. Please try again in a moment.' 
-        }), {
-          status: 503,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      
-      if (aiResponse.status === 402) {
-        return new Response(JSON.stringify({ 
-          error: 'AI service temporarily unavailable. Please contact support.' 
         }), {
           status: 503,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -216,7 +223,12 @@ Guidelines:
 
     let aiResult;
     try {
-      aiResult = JSON.parse(aiData.choices[0].message.content);
+      // Extract text from Gemini response format
+      const responseText = aiData.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!responseText) {
+        throw new Error('No response text from AI');
+      }
+      aiResult = JSON.parse(responseText);
     } catch (parseError) {
       console.error('Error parsing AI response:', parseError);
       throw new Error('Invalid AI response format');
