@@ -50,20 +50,7 @@ const Landing = () => {
                 AI-powered appliance diagnostics for Airbnb hosts and property managers. 
                 Save time, avoid scams, and keep your properties running smoothly.
               </p>
-              <div className="flex gap-3">
-                <a href="#" className="w-9 h-9 rounded-full bg-accent hover:bg-primary hover:text-primary-foreground flex items-center justify-center transition-colors">
-                  <Twitter className="w-4 h-4" />
-                </a>
-                <a href="#" className="w-9 h-9 rounded-full bg-accent hover:bg-primary hover:text-primary-foreground flex items-center justify-center transition-colors">
-                  <Linkedin className="w-4 h-4" />
-                </a>
-                <a href="#" className="w-9 h-9 rounded-full bg-accent hover:bg-primary hover:text-primary-foreground flex items-center justify-center transition-colors">
-                  <Instagram className="w-4 h-4" />
-                </a>
-                <a href="#" className="w-9 h-9 rounded-full bg-accent hover:bg-primary hover:text-primary-foreground flex items-center justify-center transition-colors">
-                  <Mail className="w-4 h-4" />
-                </a>
-              </div>
+              
             </div>
 
             {/* Product Column */}
