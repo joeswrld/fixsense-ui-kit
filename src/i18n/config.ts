@@ -5,7 +5,25 @@ import es from './locales/es.json';
 import fr from './locales/fr.json';
 import pt from './locales/pt.json';
 
-const savedLanguage = localStorage.getItem('language') || 'en';
+// Detect browser language and map to supported languages
+const detectBrowserLanguage = (): string => {
+  const savedLanguage = localStorage.getItem('language');
+  if (savedLanguage) return savedLanguage;
+
+  const browserLang = navigator.language || (navigator as any).userLanguage;
+  const langCode = browserLang.split('-')[0].toLowerCase();
+
+  // Map browser language to supported languages
+  const supportedLanguages = ['en', 'es', 'fr', 'pt'];
+  if (supportedLanguages.includes(langCode)) {
+    return langCode;
+  }
+
+  // Fallback to English
+  return 'en';
+};
+
+const detectedLanguage = detectBrowserLanguage();
 
 i18n
   .use(initReactI18next)
@@ -16,7 +34,7 @@ i18n
       fr: { translation: fr },
       pt: { translation: pt },
     },
-    lng: savedLanguage,
+    lng: detectedLanguage,
     fallbackLng: 'en',
     interpolation: {
       escapeValue: false,

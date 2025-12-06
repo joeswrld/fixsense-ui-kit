@@ -1,33 +1,36 @@
 import { TrendingUp, Users, Shield, Clock } from "lucide-react";
-
-const stats = [
-  {
-    icon: Users,
-    value: "5,000+",
-    label: "Active Users",
-    description: "Property managers trust FixSense"
-  },
-  {
-    icon: TrendingUp,
-    value: "₦500M+",
-    label: "Money Saved",
-    description: "By avoiding unnecessary repairs"
-  },
-  {
-    icon: Shield,
-    value: "98%",
-    label: "Accuracy Rate",
-    description: "AI diagnostic precision"
-  },
-  {
-    icon: Clock,
-    value: "< 2 min",
-    label: "Average Response",
-    description: "From upload to diagnosis"
-  }
-];
+import { useTranslation } from "react-i18next";
 
 export const StatsSection = () => {
+  const { t } = useTranslation();
+
+  const stats = [
+    {
+      icon: Users,
+      value: "5,000+",
+      label: t('landing.stats.activeUsers'),
+      description: t('landing.stats.activeUsersDesc')
+    },
+    {
+      icon: TrendingUp,
+      value: "₦500M+",
+      label: t('landing.stats.moneySaved'),
+      description: t('landing.stats.moneySavedDesc')
+    },
+    {
+      icon: Shield,
+      value: "98%",
+      label: t('landing.stats.accuracyRate'),
+      description: t('landing.stats.accuracyRateDesc')
+    },
+    {
+      icon: Clock,
+      value: "< 2 min",
+      label: t('landing.stats.avgResponse'),
+      description: t('landing.stats.avgResponseDesc')
+    }
+  ];
+
   return (
     <section className="py-20 bg-gradient-to-br from-primary via-primary/90 to-primary/80 text-primary-foreground">
       <div className="container px-4">

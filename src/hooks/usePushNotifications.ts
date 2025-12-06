@@ -51,14 +51,12 @@ export const usePushNotifications = () => {
     try {
       setIsLoading(true);
       
-      // Register service worker if not already registered
       let registration = await navigator.serviceWorker.getRegistration();
       if (!registration) {
         registration = await navigator.serviceWorker.register('/sw.js');
         await navigator.serviceWorker.ready;
       }
 
-      // Request notification permission
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
         toast({
@@ -69,21 +67,28 @@ export const usePushNotifications = () => {
         return false;
       }
 
-      // Subscribe to push notifications
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(PUBLIC_VAPID_KEY),
       });
 
-      // Save subscription to database
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('notification_preferences')
+          .eq('id', user.id)
+          .single();
+
+        const currentPreferences = (profile?.notification_preferences as Record<string, unknown>) || {};
+
         const { error } = await supabase
           .from('profiles')
           .update({
+            push_subscription: JSON.parse(JSON.stringify(subscription.toJSON())),
             notification_preferences: {
+              ...currentPreferences,
               push_enabled: true,
-              push_subscription: JSON.stringify(subscription),
             },
           })
           .eq('id', user.id);
@@ -120,15 +125,23 @@ export const usePushNotifications = () => {
         await subscription.unsubscribe();
       }
 
-      // Update database
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('notification_preferences')
+          .eq('id', user.id)
+          .single();
+
+        const currentPreferences = (profile?.notification_preferences as Record<string, unknown>) || {};
+
         await supabase
           .from('profiles')
           .update({
+            push_subscription: null,
             notification_preferences: {
+              ...currentPreferences,
               push_enabled: false,
-              push_subscription: null,
             },
           })
           .eq('id', user.id);
