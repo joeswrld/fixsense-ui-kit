@@ -55,7 +55,7 @@ const plans = [
   },
   {
     name: "Host Business",
-    price: 1430000, // ₦14,300 in kobo
+    price: 10000, // ₦14,300 in kobo
     tier: "business",
     features: [
       "60 photo diagnostics per month",
