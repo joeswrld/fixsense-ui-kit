@@ -1,48 +1,52 @@
-
 import { Upload, Brain, Wrench, CheckCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-
-const steps = [
-  {
-    icon: Upload,
-    step: "01",
-    title: "Upload Your Issue",
-    description: "Take a photo, record a video or audio of the malfunctioning appliance. You can also describe the problem in text.",
-    color: "from-blue-500 to-cyan-500"
-  },
-  {
-    icon: Brain,
-    step: "02",
-    title: "AI Analysis",
-    description: "Our advanced AI analyzes your input instantly, identifying the problem and comparing it against thousands of known issues.",
-    color: "from-purple-500 to-pink-500"
-  },
-  {
-    icon: Wrench,
-    step: "03",
-    title: "Get Diagnosis",
-    description: "Receive a detailed diagnosis with probable causes, cost estimates, urgency rating, and step-by-step repair instructions.",
-    color: "from-orange-500 to-red-500"
-  },
-  {
-    icon: CheckCircle,
-    step: "04",
-    title: "Fix or Schedule",
-    description: "Follow DIY instructions for simple fixes or book a trusted vendor from our directory for professional service.",
-    color: "from-green-500 to-emerald-500"
-  }
-];
+import { useTranslation } from "react-i18next";
 
 export const HowItWorksSection = () => {
+  const { t } = useTranslation();
+
+  const steps = [
+    {
+      icon: Upload,
+      step: "01",
+      title: t('landing.howItWorks.step1Title'),
+      description: t('landing.howItWorks.step1Desc'),
+      color: "from-blue-500 to-cyan-500"
+    },
+    {
+      icon: Brain,
+      step: "02",
+      title: t('landing.howItWorks.step2Title'),
+      description: t('landing.howItWorks.step2Desc'),
+      color: "from-purple-500 to-pink-500"
+    },
+    {
+      icon: Wrench,
+      step: "03",
+      title: t('landing.howItWorks.step3Title'),
+      description: t('landing.howItWorks.step3Desc'),
+      color: "from-orange-500 to-red-500"
+    },
+    {
+      icon: CheckCircle,
+      step: "04",
+      title: t('landing.howItWorks.step4Title'),
+      description: t('landing.howItWorks.step4Desc'),
+      color: "from-green-500 to-emerald-500"
+    }
+  ];
+
   return (
     <section className="py-20 md:py-32 bg-background">
       <div className="container px-4">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl md:text-5xl font-bold mb-6">
-            How <span className="text-primary">FixSense</span> Works
+            {t('landing.howItWorks.title')}{" "}
+            <span className="text-primary">{t('landing.howItWorks.titleHighlight')}</span>{" "}
+            {t('landing.howItWorks.titleEnd')}
           </h2>
           <p className="text-lg text-muted-foreground">
-            Get professional appliance diagnostics in four simple steps. No technical knowledge required.
+            {t('landing.howItWorks.subtitle')}
           </p>
         </div>
 
@@ -54,7 +58,7 @@ export const HowItWorksSection = () => {
                   <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
                     <step.icon className="w-8 h-8 text-white" />
                   </div>
-                  <div className="text-xs font-bold text-muted-foreground mb-2">STEP {step.step}</div>
+                  <div className="text-xs font-bold text-muted-foreground mb-2">{t('landing.howItWorks.step')} {step.step}</div>
                   <h3 className="text-xl font-semibold mb-3">{step.title}</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
                 </CardContent>

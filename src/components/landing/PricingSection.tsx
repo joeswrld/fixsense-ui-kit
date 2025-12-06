@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Check, Info, Crown, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useTranslation } from 'react-i18next';
 
-// Exchange rate configuration
 const FX_CONFIG = {
   NGN_TO_USD: 1500,
 };
@@ -15,67 +15,61 @@ const convertToUSD = (ngn: number) => {
 
 const plans = [
   {
-    name: "Free",
+    nameKey: "free",
     priceNGN: 0,
     priceKobo: 0,
     tier: "free",
-    features: [
-      "2 photo diagnostics per month",
-      "0 audio diagnostics (upgrade to unlock)",
-      "0 video diagnostics (upgrade to unlock)",
-      "3 text diagnostics per month",
-      "1 property",
-      "Basic support",
+    featureKeys: [
+      { key: "photoDiagnostics", count: 2 },
+      { key: "audioDiagnostics", count: 0, locked: true },
+      { key: "videoDiagnostics", count: 0, locked: true },
+      { key: "textDiagnostics", count: 3 },
+      { key: "properties", count: 1 },
+      { key: "basicSupport", count: null },
     ],
-    cta: "Current Plan",
     popular: false
   },
   {
-    name: "Pro",
+    nameKey: "pro",
     priceNGN: 5300,
     priceKobo: 530000,
     tier: "pro",
-    features: [
-      "30 photo diagnostics per month",
-      "10 audio diagnostics per month",
-      "2 video diagnostics per month",
-      "40 text diagnostics per month",
-      "5 properties",
-      "Full history",
-      "Priority support",
+    featureKeys: [
+      { key: "photoDiagnostics", count: 30 },
+      { key: "audioDiagnostics", count: 10 },
+      { key: "videoDiagnostics", count: 2 },
+      { key: "textDiagnostics", count: 40 },
+      { key: "properties", count: 5 },
+      { key: "fullHistory", count: null },
+      { key: "prioritySupport", count: null },
     ],
-    cta: "Upgrade to Pro",
     popular: false
   },
   {
-    name: "Host Business",
+    nameKey: "business",
     priceNGN: 14300,
     priceKobo: 1430000,
     tier: "business",
-    features: [
-      "60 photo diagnostics per month",
-      "20 audio diagnostics per month",
-      "5 video diagnostics per month",
-      "150 text diagnostics per month",
-      "30 properties",
-      "AI Predictive Maintenance Alerts",
-      "Advanced analytics",
-      "Dedicated support",
-      "Warranty Information",
-      "Service Vendor Directory",
-      "Maintenance History",
+    featureKeys: [
+      { key: "photoDiagnostics", count: 60 },
+      { key: "audioDiagnostics", count: 20 },
+      { key: "videoDiagnostics", count: 5 },
+      { key: "textDiagnostics", count: 150 },
+      { key: "properties", count: 30 },
+      { key: "advancedAnalytics", count: null },
+      { key: "dedicatedSupport", count: null },
+      { key: "warrantyInfo", count: null },
+      { key: "maintenanceHistory", count: null },
     ],
-    cta: "Upgrade to Business",
     popular: true
   }
 ];
 
-// Price Display Component
-const PriceDisplay = ({ ngn }: { ngn: number }) => {
+const PriceDisplay = ({ ngn, t }: { ngn: number; t: any }) => {
   if (ngn === 0) {
     return (
       <div className="flex items-baseline justify-center gap-1">
-        <span className="text-4xl font-bold text-gray-900">Free</span>
+        <span className="text-4xl font-bold text-foreground">{t('landing.pricing.free')}</span>
       </div>
     );
   }
@@ -89,30 +83,29 @@ const PriceDisplay = ({ ngn }: { ngn: number }) => {
   return (
     <div className="text-center">
       <div className="flex items-baseline justify-center gap-1">
-        <span className="text-4xl font-bold text-gray-900">₦{ngnFormatted}</span>
-        <span className="text-gray-600">/month</span>
+        <span className="text-4xl font-bold text-foreground">₦{ngnFormatted}</span>
+        <span className="text-muted-foreground">{t('landing.pricing.perMonth')}</span>
       </div>
-      <div className="text-sm text-gray-500 mt-1.5">
+      <div className="text-sm text-muted-foreground mt-1.5">
         (~${usdPrice} USD)
       </div>
     </div>
   );
 };
 
-const PricingPage = () => {
+export const PricingSection = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [user, setUser] = useState<any>(null);
   const [currentTier, setCurrentTier] = useState('free');
   const [processingPlan, setProcessingPlan] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const { t } = useTranslation();
 
-  // Check authentication on mount
   useEffect(() => {
     checkAuth();
   }, []);
 
-  // Handle checkout after login redirect
   useEffect(() => {
     const planFromUrl = searchParams.get('plan');
     if (user && planFromUrl && !processingPlan) {
@@ -154,7 +147,7 @@ const PricingPage = () => {
           body: {
             email: user.email,
             amount: plan.priceKobo,
-            plan: plan.name,
+            plan: t(`landing.pricing.${plan.nameKey}`),
             callback_url: window.location.origin + "/settings?tab=billing",
           },
         }
@@ -175,105 +168,93 @@ const PricingPage = () => {
   };
 
   const handlePricingAction = async (plan: typeof plans[0]) => {
-    // Don't proceed if already processing
     if (processingPlan) return;
+    if (plan.tier === 'free') return;
+    if (plan.tier === currentTier) return;
 
-    // Free plan - do nothing
-    if (plan.tier === 'free') {
-      return;
-    }
-
-    // Current plan - do nothing
-    if (plan.tier === currentTier) {
-      return;
-    }
-
-    // Check if user is authenticated
     if (!user) {
-      // Redirect to auth with plan in URL
       navigate(`/auth?redirect=pricing&plan=${plan.tier}`);
       return;
     }
 
-    // User is authenticated and wants to upgrade - proceed to checkout
     await initializePaystackCheckout(plan);
   };
 
   const getButtonText = (plan: typeof plans[0]) => {
     if (processingPlan === plan.tier) {
-      return 'Redirecting to Checkout...';
+      return t('landing.pricing.redirectingToCheckout');
     }
     
     if (plan.tier === currentTier) {
-      return 'Current Plan';
+      return t('landing.pricing.currentPlan');
     }
     
     if (plan.tier === 'free') {
-      return user ? 'Current Plan' : 'Get Started';
+      return user ? t('landing.pricing.currentPlan') : t('common.getStarted');
     }
     
     if (!user) {
-      return 'Sign Up to Upgrade';
+      return t('landing.pricing.signUpToUpgrade');
     }
     
-    return 'Proceed to Checkout';
+    return t('landing.pricing.proceedToCheckout');
   };
 
   const isButtonDisabled = (plan: typeof plans[0]) => {
-    // Disable if processing any plan
     if (processingPlan !== null) return true;
-    
-    // Disable if it's the current plan
     if (user && plan.tier === currentTier) return true;
-    
-    // Disable free plan for logged-in users
     if (user && plan.tier === 'free') return true;
-    
     return false;
+  };
+
+  const getFeatureText = (feature: { key: string; count: number | null; locked?: boolean }) => {
+    if (feature.count === null) {
+      return t(`landing.pricing.features.${feature.key}`);
+    }
+    if (feature.locked) {
+      return `${feature.count} ${t(`landing.pricing.features.${feature.key}`)} (${t('landing.pricing.signUpToUpgrade').split(' ')[0]})`;
+    }
+    return `${feature.count} ${t(`landing.pricing.features.${feature.key}`)}`;
   };
 
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white via-indigo-50/30 to-white py-20 px-4">
+    <div className="min-h-screen bg-gradient-to-b from-background via-accent/10 to-background py-20 px-4">
       <div className="container max-w-7xl mx-auto">
-        {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-6">
-          <h2 className="text-3xl md:text-5xl font-bold mb-6 text-gray-900">
-            Simple, Transparent{" "}
-            <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Pricing
+          <h2 className="text-3xl md:text-5xl font-bold mb-6 text-foreground">
+            {t('landing.pricing.title')}{" "}
+            <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+              {t('landing.pricing.titleHighlight')}
             </span>
           </h2>
-          <p className="text-lg text-gray-600 mb-6">
-            Choose the plan that fits your needs. No hidden fees, cancel anytime.
+          <p className="text-lg text-muted-foreground mb-6">
+            {t('landing.pricing.subtitle')}
           </p>
           
-          {/* Payment Disclaimer */}
-          <div className="inline-flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-800 max-w-xl">
+          <div className="inline-flex items-start gap-2 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg px-4 py-3 text-sm text-blue-800 dark:text-blue-200 max-w-xl">
             <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
             <span className="text-left">
-              All payments are securely processed in Nigerian Naira (NGN). 
-              <span className="hidden sm:inline"> USD prices shown for reference only.</span>
+              {t('landing.pricing.paymentDisclaimer')}
+              <span className="hidden sm:inline"> {t('landing.pricing.usdReference')}</span>
             </span>
           </div>
 
-          {/* User Status Banner */}
           {user && (
-            <div className="mt-6 inline-flex items-center gap-2 bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-3 text-sm text-indigo-800">
+            <div className="mt-6 inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-lg px-4 py-3 text-sm text-primary">
               <Crown className="w-4 h-4" />
-              <span>Current Plan: <strong className="capitalize">{currentTier}</strong></span>
+              <span>{t('landing.pricing.currentPlan')}: <strong className="capitalize">{currentTier}</strong></span>
             </div>
           )}
         </div>
 
-        {/* Pricing Cards */}
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto mt-12">
           {plans.map((plan, index) => {
             const isCurrentPlan = user && plan.tier === currentTier;
@@ -281,18 +262,18 @@ const PricingPage = () => {
             return (
               <div 
                 key={index} 
-                className={`relative bg-white rounded-2xl border-2 transition-all hover:shadow-xl ${
+                className={`relative bg-card rounded-2xl border-2 transition-all hover:shadow-xl ${
                   plan.popular 
-                    ? 'border-indigo-500 shadow-xl scale-105' 
+                    ? 'border-primary shadow-xl scale-105' 
                     : isCurrentPlan
                     ? 'border-green-500 shadow-lg'
-                    : 'border-gray-200 hover:border-indigo-300'
+                    : 'border-border hover:border-primary/30'
                 }`}
               >
                 {plan.popular && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                    <div className="bg-indigo-600 text-white px-4 py-1.5 rounded-full text-sm font-semibold shadow-lg">
-                      Recommended
+                    <div className="bg-primary text-primary-foreground px-4 py-1.5 rounded-full text-sm font-semibold shadow-lg">
+                      {t('landing.pricing.recommended')}
                     </div>
                   </div>
                 )}
@@ -301,22 +282,22 @@ const PricingPage = () => {
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                     <div className="bg-green-600 text-white px-4 py-1.5 rounded-full text-sm font-semibold shadow-lg flex items-center gap-1">
                       <Check className="w-4 h-4" />
-                      Current Plan
+                      {t('landing.pricing.currentPlan')}
                     </div>
                   </div>
                 )}
                 
-                <div className="text-center pb-8 pt-10 px-6 border-b border-gray-100">
-                  <h3 className="text-2xl font-bold mb-4 text-gray-900">{plan.name}</h3>
-                  <PriceDisplay ngn={plan.priceNGN} />
+                <div className="text-center pb-8 pt-10 px-6 border-b border-border">
+                  <h3 className="text-2xl font-bold mb-4 text-foreground">{t(`landing.pricing.${plan.nameKey}`)}</h3>
+                  <PriceDisplay ngn={plan.priceNGN} t={t} />
                 </div>
 
                 <div className="p-6 pb-4">
                   <ul className="space-y-3.5">
-                    {plan.features.map((feature, fIndex) => (
+                    {plan.featureKeys.map((feature, fIndex) => (
                       <li key={fIndex} className="flex items-start gap-2.5">
-                        <Check className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
-                        <span className="text-sm text-gray-700">{feature}</span>
+                        <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                        <span className="text-sm text-muted-foreground">{getFeatureText(feature)}</span>
                       </li>
                     ))}
                   </ul>
@@ -326,10 +307,10 @@ const PricingPage = () => {
                   <button 
                     className={`w-full py-3 px-6 rounded-lg font-semibold transition-all ${
                       isCurrentPlan
-                        ? 'bg-green-100 text-green-700 cursor-default'
+                        ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 cursor-default'
                         : plan.popular 
-                        ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed' 
-                        : 'bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed'
+                        ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed' 
+                        : 'bg-foreground text-background hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed'
                     }`}
                     onClick={() => handlePricingAction(plan)}
                     disabled={isButtonDisabled(plan)}
@@ -345,14 +326,12 @@ const PricingPage = () => {
           })}
         </div>
 
-        {/* Additional Information Footer */}
         <div className="mt-12 text-center space-y-2">
-          <p className="text-sm text-gray-600">
-            Exchange rate for reference: ₦1,500 = $1 USD
+          <p className="text-sm text-muted-foreground">
+            {t('landing.pricing.exchangeRate')}
           </p>
-          <p className="text-xs text-gray-500 max-w-2xl mx-auto">
-            Foreign cards are accepted through Paystack with automatic currency conversion. 
-            All subscriptions are billed monthly in Nigerian Naira (NGN).
+          <p className="text-xs text-muted-foreground max-w-2xl mx-auto">
+            {t('landing.pricing.foreignCards')}
           </p>
         </div>
       </div>
@@ -360,4 +339,4 @@ const PricingPage = () => {
   );
 };
 
-export default PricingPage;
+export default PricingSection;

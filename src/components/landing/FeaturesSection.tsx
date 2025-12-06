@@ -1,50 +1,53 @@
 import { Camera, Video, Mic, DollarSign, AlertTriangle, Wrench } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-
-const features = [
-  {
-    icon: Camera,
-    title: "AI Diagnostics ",
-    description: "Upload a video, audio, or photo and get instant repair diagnosis and cost estimate. "
-  },
-  {
-    icon: Video,
-    title: "AI Predictive Maintenance Alerts",
-    description: "AI-powered failure predictions and recommendations"
-  },
-  {
-    icon: Mic,
-    title: "Service Vendor Directory",
-    description: "Manage your trusted service providers"
-  },
-  {
-    icon: DollarSign,
-    title: "Cost Estimates",
-    description: "Get accurate repair cost ranges to budget effectively"
-  },
-  {
-    icon: AlertTriangle,
-    title: "Urgency Rating",
-    description: "Know what's critical and what can wait - prioritize repairs smartly"
-  },
-  {
-    icon: Wrench,
-    title: "Fix Instructions",
-    description: "Step-by-step guidance for repairs you can handle yourself"
-  }
-];
+import { useTranslation } from "react-i18next";
 
 export const FeaturesSection = () => {
+  const { t } = useTranslation();
+
+  const features = [
+    {
+      icon: Camera,
+      title: t('landing.features.aiDiagnosis'),
+      description: t('landing.features.aiDiagnosisDesc')
+    },
+    {
+      icon: Video,
+      title: t('landing.features.predictiveMaintenance'),
+      description: t('landing.features.predictiveMaintenanceDesc')
+    },
+    {
+      icon: Mic,
+      title: t('landing.features.vendorDirectory'),
+      description: t('landing.features.vendorDirectoryDesc')
+    },
+    {
+      icon: DollarSign,
+      title: t('landing.features.costEstimates'),
+      description: t('landing.features.costEstimatesDesc')
+    },
+    {
+      icon: AlertTriangle,
+      title: t('landing.features.urgencyRating'),
+      description: t('landing.features.urgencyRatingDesc')
+    },
+    {
+      icon: Wrench,
+      title: t('landing.features.fixInstructions'),
+      description: t('landing.features.fixInstructionsDesc')
+    }
+  ];
+
   return (
     <section className="py-20 md:py-32 bg-accent/20">
       <div className="container px-4">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl md:text-5xl font-bold mb-6">
-            Everything You Need to{" "}
-            <span className="text-primary">Diagnose & Fix</span>
+            {t('landing.features.title')}{" "}
+            <span className="text-primary">{t('landing.features.titleHighlight')}</span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            Professional-grade diagnostics powered by AI, designed specifically for property managers and hosts
+            {t('landing.features.subtitle')}
           </p>
         </div>
 
