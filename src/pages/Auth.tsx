@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Wrench, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -18,6 +19,7 @@ const Auth = () => {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -38,6 +40,16 @@ const Auth = () => {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!acceptedTerms) {
+      toast({
+        title: "Terms Required",
+        description: "Please accept the Terms of Service and Privacy Policy to continue.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -85,6 +97,16 @@ const Auth = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!acceptedTerms) {
+      toast({
+        title: "Terms Required",
+        description: "Please accept the Terms of Service and Privacy Policy to continue.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -275,6 +297,39 @@ const Auth = () => {
                     </button>
                   </div>
                 </div>
+
+                <div className="flex items-start space-x-2">
+                  <Checkbox
+                    id="signin-terms"
+                    checked={acceptedTerms}
+                    onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
+                    className="mt-1"
+                  />
+                  <label
+                    htmlFor="signin-terms"
+                    className="text-sm text-muted-foreground leading-relaxed cursor-pointer"
+                  >
+                    I agree to the{" "}
+                    <Link
+                      to="/terms-of-service"
+                      className="text-primary hover:underline"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Terms of Service
+                    </Link>{" "}
+                    and{" "}
+                    <Link
+                      to="/privacy-policy"
+                      className="text-primary hover:underline"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Privacy Policy
+                    </Link>
+                  </label>
+                </div>
+
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Signing In..." : "Sign In"}
                 </Button>
@@ -332,6 +387,39 @@ const Auth = () => {
                     </button>
                   </div>
                 </div>
+
+                <div className="flex items-start space-x-2">
+                  <Checkbox
+                    id="signup-terms"
+                    checked={acceptedTerms}
+                    onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
+                    className="mt-1"
+                  />
+                  <label
+                    htmlFor="signup-terms"
+                    className="text-sm text-muted-foreground leading-relaxed cursor-pointer"
+                  >
+                    I agree to the{" "}
+                    <Link
+                      to="/terms-of-service"
+                      className="text-primary hover:underline"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Terms of Service
+                    </Link>{" "}
+                    and{" "}
+                    <Link
+                      to="/privacy-policy"
+                      className="text-primary hover:underline"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Privacy Policy
+                    </Link>
+                  </label>
+                </div>
+
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Creating Account..." : "Sign Up"}
                 </Button>
