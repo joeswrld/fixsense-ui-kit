@@ -29,7 +29,7 @@ import {
   Loader2, 
   CheckCircle2, 
   Download, 
-  Calendar,
+  CalendarIcon,
   History,
   Wrench,
   LogOut,
@@ -320,7 +320,7 @@ const CalendarContent = () => {
 
   // Reschedule maintenance
   const rescheduleMutation = useMutation({
-    mutationFn: async ({ applianceId, newDate }) => {
+    mutationFn: async ({ applianceId, newDate }: { applianceId: string; newDate: Date }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
@@ -550,7 +550,7 @@ const CalendarContent = () => {
                 variant="outline"
                 onClick={() => setShowScheduleDialog(true)}
               >
-                <Calendar className="w-4 h-4 mr-2" />
+                <CalendarIcon className="w-4 h-4 mr-2" />
                 Schedule Maintenance
               </Button>
               <Button className="bg-gradient-to-r from-blue-600 to-purple-600">
@@ -611,7 +611,7 @@ const CalendarContent = () => {
                 <Tabs defaultValue="scheduled" className="w-full">
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="scheduled">
-                      <Calendar className="w-4 h-4 mr-2" />
+                      <CalendarIcon className="w-4 h-4 mr-2" />
                       Scheduled
                     </TabsTrigger>
                     <TabsTrigger value="history">
@@ -739,7 +739,7 @@ const CalendarContent = () => {
                     <p className="text-sm text-slate-600">Upcoming (30 days)</p>
                     <p className="text-3xl font-bold text-blue-600">{upcomingCount}</p>
                   </div>
-                  <Calendar className="w-10 h-10 text-blue-600 opacity-20" />
+                  <CalendarIcon className="w-10 h-10 text-blue-600 opacity-20" />
                 </div>
               </CardContent>
             </Card>
@@ -800,7 +800,7 @@ const CalendarContent = () => {
                           !newDate && "text-slate-500"
                         )}
                       >
-                        <Calendar className="mr-2 h-4 w-4" />
+                        <CalendarIcon className="mr-2 h-4 w-4" />
                         {newDate ? format(newDate, "PPP") : <span>Pick a date</span>}
                       </Button>
                     </PopoverTrigger>
@@ -981,7 +981,7 @@ const CalendarContent = () => {
                           !scheduledDate && "text-slate-500"
                         )}
                       >
-                        <Calendar className="mr-2 h-4 w-4" />
+                        <CalendarIcon className="mr-2 h-4 w-4" />
                         {scheduledDate ? format(scheduledDate, "PPP") : <span>Pick a date</span>}
                       </Button>
                     </PopoverTrigger>
@@ -1025,7 +1025,7 @@ const CalendarContent = () => {
                     </>
                   ) : (
                     <>
-                      <Calendar className="w-4 h-4 mr-2" />
+                      <CalendarIcon className="w-4 h-4 mr-2" />
                       Schedule
                     </>
                   )}
@@ -1039,7 +1039,7 @@ const CalendarContent = () => {
   );
 };
 
-const Calendar = () => {
+const CalendarPage = () => {
   return (
     <BusinessAccessGate featureName="Maintenance Calendar">
       <CalendarContent />
@@ -1047,4 +1047,4 @@ const Calendar = () => {
   );
 };
 
-export default Calendar; 
+export default CalendarPage;
