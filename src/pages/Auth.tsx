@@ -311,7 +311,7 @@ const Auth = () => {
                   >
                     I agree to the{" "}
                     <Link
-                      to="/terms-of-service"
+                      to="/terms"
                       className="text-primary hover:underline"
                       target="_blank"
                       rel="noopener noreferrer"
@@ -320,7 +320,7 @@ const Auth = () => {
                     </Link>{" "}
                     and{" "}
                     <Link
-                      to="/privacy-policy"
+                      to="/privacy"
                       className="text-primary hover:underline"
                       target="_blank"
                       rel="noopener noreferrer"
