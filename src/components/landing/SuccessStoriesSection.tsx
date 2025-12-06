@@ -1,47 +1,51 @@
 import { Star, Quote } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-const testimonials = [
-  {
-    name: "Sarah Johnson",
-    role: "Airbnb Superhost",
-    location: "Lagos, Nigeria",
-    image: null,
-    rating: 5,
-    text: "FixSense saved me ₦250,000! A technician quoted me ₦300,000 for a 'complete AC replacement,' but FixSense diagnosed it as a simple refrigerant issue. Cost me only ₦50,000 to fix. Absolute lifesaver!",
-    savings: "₦250,000 saved"
-  },
-  {
-    name: "David Okonkwo",
-    role: "Property Manager",
-    location: "Abuja, Nigeria",
-    image: null,
-    rating: 5,
-    text: "Managing 12 properties means constant appliance issues. FixSense helps me prioritize what's urgent and what can wait. The predictive maintenance alerts have prevented 3 major breakdowns this year alone.",
-    properties: "12 properties"
-  },
-  {
-    name: "Amara Chukwu",
-    role: "Vacation Rental Host",
-    location: "Port Harcourt, Nigeria",
-    image: null,
-    rating: 5,
-    text: "My washing machine broke during peak season. FixSense gave me instant diagnosis at 2 AM! I followed the DIY fix instructions and had it running in 30 minutes. My guests never knew there was a problem.",
-    response: "2 AM support"
-  }
-];
+import { useTranslation } from "react-i18next";
 
 export const SuccessStoriesSection = () => {
+  const { t } = useTranslation();
+
+  const testimonials = [
+    {
+      name: t('landing.successStories.testimonial1Name'),
+      role: t('landing.successStories.testimonial1Role'),
+      location: t('landing.successStories.testimonial1Location'),
+      image: null,
+      rating: 5,
+      text: t('landing.successStories.testimonial1Text'),
+      highlight: t('landing.successStories.testimonial1Savings')
+    },
+    {
+      name: t('landing.successStories.testimonial2Name'),
+      role: t('landing.successStories.testimonial2Role'),
+      location: t('landing.successStories.testimonial2Location'),
+      image: null,
+      rating: 5,
+      text: t('landing.successStories.testimonial2Text'),
+      highlight: t('landing.successStories.testimonial2Properties')
+    },
+    {
+      name: t('landing.successStories.testimonial3Name'),
+      role: t('landing.successStories.testimonial3Role'),
+      location: t('landing.successStories.testimonial3Location'),
+      image: null,
+      rating: 5,
+      text: t('landing.successStories.testimonial3Text'),
+      highlight: t('landing.successStories.testimonial3Response')
+    }
+  ];
+
   return (
     <section className="py-20 md:py-32 bg-accent/20">
       <div className="container px-4">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl md:text-5xl font-bold mb-6">
-            Trusted by <span className="text-primary">Hosts & Property Managers</span>
+            {t('landing.successStories.title')}{" "}
+            <span className="text-primary">{t('landing.successStories.titleHighlight')}</span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            Join thousands of property owners who are saving money and time with AI-powered diagnostics
+            {t('landing.successStories.subtitle')}
           </p>
         </div>
 
@@ -61,17 +65,17 @@ export const SuccessStoriesSection = () => {
                   "{testimonial.text}"
                 </p>
 
-                {(testimonial.savings || testimonial.properties || testimonial.response) && (
+                {testimonial.highlight && (
                   <div className="mb-6 p-3 bg-primary/5 rounded-lg border border-primary/10">
                     <div className="text-xs font-semibold text-primary">
-                      {testimonial.savings || testimonial.properties || testimonial.response}
+                      {testimonial.highlight}
                     </div>
                   </div>
                 )}
 
                 <div className="flex items-center gap-3">
                   <Avatar>
-                    <AvatarImage src={testimonial.image} />
+                    <AvatarImage src={testimonial.image || undefined} />
                     <AvatarFallback className="bg-primary text-primary-foreground">
                       {testimonial.name.split(' ').map(n => n[0]).join('')}
                     </AvatarFallback>

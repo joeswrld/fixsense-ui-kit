@@ -328,6 +328,7 @@ export type Database = {
           paystack_customer_code: string | null
           paystack_subscription_code: string | null
           phone: string | null
+          push_subscription: Json | null
           subscription_end_date: string | null
           subscription_start_date: string | null
           subscription_status: string | null
@@ -353,6 +354,7 @@ export type Database = {
           paystack_customer_code?: string | null
           paystack_subscription_code?: string | null
           phone?: string | null
+          push_subscription?: Json | null
           subscription_end_date?: string | null
           subscription_start_date?: string | null
           subscription_status?: string | null
@@ -378,6 +380,7 @@ export type Database = {
           paystack_customer_code?: string | null
           paystack_subscription_code?: string | null
           phone?: string | null
+          push_subscription?: Json | null
           subscription_end_date?: string | null
           subscription_start_date?: string | null
           subscription_status?: string | null

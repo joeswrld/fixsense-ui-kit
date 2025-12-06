@@ -1,46 +1,49 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { Card } from "@/components/ui/card";
-
-const faqs = [
-  {
-    question: "How accurate are the AI diagnostics?",
-    answer: "Our AI has a 98% accuracy rate, trained on thousands of appliance issues and repair cases. It analyzes visual, audio, and text inputs to provide reliable diagnostics comparable to professional technicians."
-  },
-  {
-    question: "What types of appliances does FixSense support?",
-    answer: "FixSense supports all major home appliances including air conditioners, refrigerators, washing machines, dryers, dishwashers, microwaves, ovens, water heaters, and more. We're constantly expanding our database."
-  },
-  {
-    question: "Do I need technical knowledge to use FixSense?",
-    answer: "Not at all! Simply take a photo, record a video/audio, or describe the problem in plain language. Our AI handles the technical analysis and provides easy-to-understand results."
-  },
-  {
-    question: "How do the cost estimates work?",
-    answer: "We provide cost ranges in Nigerian Naira based on typical repair costs in your region. These estimates help you budget and identify when a technician might be overcharging."
-  },
-  {
-    question: "Can I use FixSense for properties outside Nigeria?",
-    answer: "Yes! While our pricing is in Naira, FixSense works globally. Cost estimates will be shown in your local currency for reference."
-  },
-  {
-    question: "What if I need professional help after diagnosis?",
-    answer: "Business plan subscribers get access to our verified vendor directory where you can book trusted service providers directly through the platform."
-  }
-];
+import { useTranslation } from "react-i18next";
 
 export const FAQSection = () => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const { t } = useTranslation();
+
+  const faqs = [
+    {
+      question: t('landing.faq.q1'),
+      answer: t('landing.faq.a1')
+    },
+    {
+      question: t('landing.faq.q2'),
+      answer: t('landing.faq.a2')
+    },
+    {
+      question: t('landing.faq.q3'),
+      answer: t('landing.faq.a3')
+    },
+    {
+      question: t('landing.faq.q4'),
+      answer: t('landing.faq.a4')
+    },
+    {
+      question: t('landing.faq.q5'),
+      answer: t('landing.faq.a5')
+    },
+    {
+      question: t('landing.faq.q6'),
+      answer: t('landing.faq.a6')
+    }
+  ];
 
   return (
     <section className="py-20 md:py-32 bg-background">
       <div className="container px-4">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl md:text-5xl font-bold mb-6">
-            Frequently Asked <span className="text-primary">Questions</span>
+            {t('landing.faq.title')}{" "}
+            <span className="text-primary">{t('landing.faq.titleHighlight')}</span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            Everything you need to know about FixSense
+            {t('landing.faq.subtitle')}
           </p>
         </div>
 

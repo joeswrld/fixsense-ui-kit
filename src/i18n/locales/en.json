@@ -43,7 +43,8 @@
       "costEstimates": "Cost Estimates",
       "instantAnalysis": "Instant Analysis",
       "trustedBy": "Trusted by property managers worldwide",
-      "activeUsers": "5,000+ active users"
+      "activeUsers": "5,000+ active users",
+      "demoComingSoon": "Demo video coming soon..."
     },
     "features": {
       "title": "Everything You Need to",
@@ -76,6 +77,7 @@
       "recommended": "Recommended",
       "signUpToUpgrade": "Sign Up to Upgrade",
       "proceedToCheckout": "Proceed to Checkout",
+      "redirectingToCheckout": "Redirecting to Checkout...",
       "exchangeRate": "Exchange rate for reference: ₦1,500 = $1 USD",
       "foreignCards": "Foreign cards are accepted through Paystack with automatic currency conversion. All subscriptions are billed monthly in Nigerian Naira (NGN).",
       "features": {
@@ -94,21 +96,77 @@
       }
     },
     "howItWorks": {
-      "title": "How It Works",
-      "step1Title": "Upload",
-      "step1Desc": "Take a photo, video, or audio of the issue",
-      "step2Title": "Analyze",
-      "step2Desc": "Our AI diagnoses the problem instantly",
-      "step3Title": "Fix",
-      "step3Desc": "Get cost estimates and repair instructions"
+      "title": "How",
+      "titleHighlight": "FixSense",
+      "titleEnd": "Works",
+      "subtitle": "Get professional appliance diagnostics in four simple steps. No technical knowledge required.",
+      "step": "STEP",
+      "step1Title": "Upload Your Issue",
+      "step1Desc": "Take a photo, record a video or audio of the malfunctioning appliance. You can also describe the problem in text.",
+      "step2Title": "AI Analysis",
+      "step2Desc": "Our advanced AI analyzes your input instantly, identifying the problem and comparing it against thousands of known issues.",
+      "step3Title": "Get Diagnosis",
+      "step3Desc": "Receive a detailed diagnosis with probable causes, cost estimates, urgency rating, and step-by-step repair instructions.",
+      "step4Title": "Fix or Schedule",
+      "step4Desc": "Follow DIY instructions for simple fixes or book a trusted vendor from our directory for professional service."
+    },
+    "stats": {
+      "activeUsers": "Active Users",
+      "activeUsersDesc": "Property managers trust FixSense",
+      "moneySaved": "Money Saved",
+      "moneySavedDesc": "By avoiding unnecessary repairs",
+      "accuracyRate": "Accuracy Rate",
+      "accuracyRateDesc": "AI diagnostic precision",
+      "avgResponse": "Average Response",
+      "avgResponseDesc": "From upload to diagnosis"
+    },
+    "successStories": {
+      "title": "Trusted by",
+      "titleHighlight": "Hosts & Property Managers",
+      "subtitle": "Join thousands of property owners who are saving money and time with AI-powered diagnostics",
+      "testimonial1Name": "Sarah Johnson",
+      "testimonial1Role": "Airbnb Superhost",
+      "testimonial1Location": "Lagos, Nigeria",
+      "testimonial1Text": "FixSense saved me ₦250,000! A technician quoted me ₦300,000 for a 'complete AC replacement,' but FixSense diagnosed it as a simple refrigerant issue. Cost me only ₦50,000 to fix. Absolute lifesaver!",
+      "testimonial1Savings": "₦250,000 saved",
+      "testimonial2Name": "David Okonkwo",
+      "testimonial2Role": "Property Manager",
+      "testimonial2Location": "Abuja, Nigeria",
+      "testimonial2Text": "Managing 12 properties means constant appliance issues. FixSense helps me prioritize what's urgent and what can wait. The predictive maintenance alerts have prevented 3 major breakdowns this year alone.",
+      "testimonial2Properties": "12 properties",
+      "testimonial3Name": "Amara Chukwu",
+      "testimonial3Role": "Vacation Rental Host",
+      "testimonial3Location": "Port Harcourt, Nigeria",
+      "testimonial3Text": "My washing machine broke during peak season. FixSense gave me instant diagnosis at 2 AM! I followed the DIY fix instructions and had it running in 30 minutes. My guests never knew there was a problem.",
+      "testimonial3Response": "2 AM support"
     },
     "faq": {
-      "title": "Frequently Asked Questions"
+      "title": "Frequently Asked",
+      "titleHighlight": "Questions",
+      "subtitle": "Everything you need to know about FixSense",
+      "q1": "How accurate are the AI diagnostics?",
+      "a1": "Our AI has a 98% accuracy rate, trained on thousands of appliance issues and repair cases. It analyzes visual, audio, and text inputs to provide reliable diagnostics comparable to professional technicians.",
+      "q2": "What types of appliances does FixSense support?",
+      "a2": "FixSense supports all major home appliances including air conditioners, refrigerators, washing machines, dryers, dishwashers, microwaves, ovens, water heaters, and more. We're constantly expanding our database.",
+      "q3": "Do I need technical knowledge to use FixSense?",
+      "a3": "Not at all! Simply take a photo, record a video/audio, or describe the problem in plain language. Our AI handles the technical analysis and provides easy-to-understand results.",
+      "q4": "How do the cost estimates work?",
+      "a4": "We provide cost ranges based on typical repair costs in your region. These estimates help you budget and identify when a technician might be overcharging.",
+      "q5": "Can I use FixSense for properties outside Nigeria?",
+      "a5": "Yes! FixSense works globally. Cost estimates will be shown in your local currency for reference.",
+      "q6": "What if I need professional help after diagnosis?",
+      "a6": "Business plan subscribers get access to our verified vendor directory where you can book trusted service providers directly through the platform."
     },
     "cta": {
-      "title": "Ready to diagnose smarter?",
-      "subtitle": "Join thousands of property managers saving time and money with AI diagnostics.",
-      "button": "Get Started for Free"
+      "badge": "Start Your Free Trial Today",
+      "title": "Ready to Save Time and",
+      "titleHighlight": "Money?",
+      "subtitle": "Join thousands of property managers and Airbnb hosts who are using AI to diagnose appliance issues instantly. No credit card required for free tier.",
+      "getStartedFree": "Get Started Free",
+      "viewPricing": "View Pricing",
+      "freeTierAvailable": "Free tier available",
+      "noCreditCard": "No credit card required",
+      "cancelAnytime": "Cancel anytime"
     }
   },
   "dashboard": {

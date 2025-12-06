@@ -1,18 +1,19 @@
 import { Button } from "@/components/ui/button";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import heroBg from "@/assets/hero-bg.jpg";
 import { Sparkles, ShieldCheck, TrendingUp, ArrowRight, Play } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
+import { useTranslation } from "react-i18next";
 
 export const HeroSection = () => {
   const [videoOpen, setVideoOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   useEffect(() => {
-    // Check if user is logged in
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
     });
@@ -28,61 +29,52 @@ export const HeroSection = () => {
 
   const handleGetStarted = () => {
     if (user) {
-      // Logged-in users go directly to dashboard
       navigate("/dashboard");
     } else {
-      // Non-logged-in users go to auth
       navigate("/auth");
     }
   };
 
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
-      {/* Background Elements */}
       <div 
         className="absolute inset-0 bg-cover bg-center opacity-10"
         style={{ backgroundImage: `url(${heroBg})` }}
       />
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5" />
       
-      {/* Animated Background Blobs */}
       <div className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-pulse" />
       <div className="absolute bottom-20 right-10 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse delay-1000" />
       
       <div className="container relative z-10 px-4 py-16 md:py-24">
         <div className="max-w-4xl mx-auto text-center space-y-8">
-          {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-card/80 backdrop-blur-sm animate-fade-in">
             <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-            <span className="text-sm font-medium">AI-Powered Diagnostics for Smart Hosts</span>
+            <span className="text-sm font-medium">{t('landing.hero.badge')}</span>
           </div>
 
-          {/* Main Heading */}
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight animate-fade-in-up">
-            AI Diagnostics for{" "}
+            {t('landing.hero.title')}{" "}
             <span className="bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
-              Airbnb
+              {t('landing.hero.airbnb')}
             </span>{" "}
-            &{" "}
+            {t('landing.hero.and')}{" "}
             <span className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 bg-clip-text text-transparent">
-              Home Appliances
+              {t('landing.hero.homeAppliances')}
             </span>
           </h1>
 
-          {/* Subheading */}
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed animate-fade-in-up delay-200">
-            Upload a video, audio, or photo and get instant repair diagnosis and cost estimate. 
-            Save time, avoid scams, and keep your properties running smoothly.
+            {t('landing.hero.subtitle')}
           </p>
 
-          {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4 animate-fade-in-up delay-300">
             <Button 
               size="lg" 
               className="min-w-[200px] group shadow-xl hover:shadow-2xl transition-all"
               onClick={handleGetStarted}
             >
-              {user ? "Go to Dashboard" : "Sign Up Free"}
+              {user ? t('landing.hero.goToDashboard') : t('landing.hero.signUpFree')}
               <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Button>
             <Button 
@@ -92,29 +84,27 @@ export const HeroSection = () => {
               onClick={() => setVideoOpen(true)}
             >
               <Play className="mr-2 w-5 h-5 group-hover:scale-110 transition-transform" />
-              Watch Demo
+              {t('landing.hero.watchDemo')}
             </Button>
           </div>
 
-          {/* Trust Indicators */}
           <div className="flex flex-wrap justify-center gap-4 md:gap-8 pt-8 text-sm animate-fade-in-up delay-500">
             <div className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg bg-card/50 backdrop-blur-sm border border-border/50">
               <ShieldCheck className="w-5 h-5 text-green-500" />
-              <span className="font-medium">Scam Protection</span>
+              <span className="font-medium">{t('landing.hero.scamProtection')}</span>
             </div>
             <div className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg bg-card/50 backdrop-blur-sm border border-border/50">
               <TrendingUp className="w-5 h-5 text-blue-500" />
-              <span className="font-medium">Cost Estimates</span>
+              <span className="font-medium">{t('landing.hero.costEstimates')}</span>
             </div>
             <div className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg bg-card/50 backdrop-blur-sm border border-border/50">
               <Sparkles className="w-5 h-5 text-purple-500" />
-              <span className="font-medium">Instant Analysis</span>
+              <span className="font-medium">{t('landing.hero.instantAnalysis')}</span>
             </div>
           </div>
 
-          {/* Social Proof */}
           <div className="pt-8 animate-fade-in-up delay-700">
-            <p className="text-sm text-muted-foreground mb-4">Trusted by property managers worldwide</p>
+            <p className="text-sm text-muted-foreground mb-4">{t('landing.hero.trustedBy')}</p>
             <div className="flex justify-center items-center gap-2">
               <div className="flex -space-x-2">
                 {[1, 2, 3, 4, 5].map((i) => (
@@ -126,13 +116,12 @@ export const HeroSection = () => {
                   </div>
                 ))}
               </div>
-              <span className="text-sm font-medium ml-2">5,000+ active users</span>
+              <span className="text-sm font-medium ml-2">{t('landing.hero.activeUsers')}</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Video Modal */}
       {videoOpen && (
         <div 
           className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
@@ -142,14 +131,13 @@ export const HeroSection = () => {
             <div className="w-full h-full flex items-center justify-center text-muted-foreground">
               <div className="text-center">
                 <Play className="w-16 h-16 mx-auto mb-4" />
-                <p>Demo video coming soon...</p>
+                <p>{t('landing.hero.demoComingSoon')}</p>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Custom CSS for animations */}
       <style>{`
         @keyframes fade-in {
           from { opacity: 0; }
