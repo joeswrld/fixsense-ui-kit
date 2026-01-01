@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Wrench, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Auth = () => {
@@ -183,9 +183,11 @@ const Auth = () => {
         <Card className="w-full max-w-md">
           <CardHeader className="text-center space-y-3">
             <Link to="/" className="flex items-center justify-center gap-2 font-bold text-2xl">
-              <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-                <Wrench className="w-6 h-6 text-primary-foreground" />
-              </div>
+              <img
+                src="/android-chrome-512x512.png"
+                alt="FixSense Logo"
+                className="w-10 h-10 rounded-lg"
+              />
               <span>FixSense</span>
             </Link>
             <CardTitle className="text-2xl">Reset Password</CardTitle>
@@ -233,9 +235,11 @@ const Auth = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-3">
           <Link to="/" className="flex items-center justify-center gap-2 font-bold text-2xl">
-            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-              <Wrench className="w-6 h-6 text-primary-foreground" />
-            </div>
+            <img
+              src="/android-chrome-512x512.png"
+              alt="FixSense Logo"
+              className="w-10 h-10 rounded-lg"
+            />
             <span>FixSense</span>
           </Link>
           <CardTitle className="text-2xl">Welcome</CardTitle>
