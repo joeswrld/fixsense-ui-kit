@@ -122,41 +122,42 @@ export const HeroSection = () => {
         </div>
       </div>
 
-      {videoOpen && (
+      {/* Preload iframe - always in DOM but hidden when not needed */}
+      <div 
+        className={`fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity duration-300 ${
+          videoOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={() => setVideoOpen(false)}
+      >
         <div 
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          onClick={() => setVideoOpen(false)}
+          className="max-w-5xl w-full bg-card rounded-lg overflow-hidden shadow-2xl relative"
+          onClick={(e) => e.stopPropagation()}
         >
-          <div 
-            className="max-w-5xl w-full bg-card rounded-lg overflow-hidden shadow-2xl relative"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-center p-4 border-b border-border">
-              <h3 className="text-lg font-semibold">Product Demo</h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setVideoOpen(false)}
-                className="h-8 w-8 p-0"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="p-4">
-              <div style={{ position: 'relative', paddingBottom: 'calc(43.850658857979504% + 41px)', height: '0', width: '100%' }}>
-                <iframe
-                  src="https://demo.arcade.software/j9HG34c09LsumcSwZj12?embed&embed_mobile=inline&embed_desktop=inline&show_copy_link=true"
-                  title="Diagnose and Troubleshoot Appliance Problems with AI"
-                  frameBorder="0"
-                  allowFullScreen
-                  allow="clipboard-write"
-                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', colorScheme: 'light' }}
-                />
-              </div>
+          <div className="flex justify-between items-center p-4 border-b border-border">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setVideoOpen(false)}
+              className="h-8 w-8 p-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="p-4">
+            <div style={{ position: 'relative', paddingBottom: 'calc(43.850658857979504% + 41px)', height: '0', width: '100%' }}>
+              <iframe
+                src="https://demo.arcade.software/j9HG34c09LsumcSwZj12?embed&embed_mobile=inline&embed_desktop=inline&show_copy_link=true"
+                title="Diagnose and Troubleshoot Appliance Problems with AI"
+                frameBorder="0"
+                loading="eager"
+                allowFullScreen
+                allow="clipboard-write"
+                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', colorScheme: 'light' }}
+              />
             </div>
           </div>
         </div>
-      )}
+      </div>
 
       <style>{`
         @keyframes fade-in {
