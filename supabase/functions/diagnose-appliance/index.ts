@@ -120,9 +120,10 @@ serve(async (req) => {
       );
     }
 
-    const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
-    if (!geminiApiKey) {
-      throw new Error('GEMINI_API_KEY is not configured');
+    // Use Lovable AI Gateway instead of direct Gemini API
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    if (!lovableApiKey) {
+      throw new Error('LOVABLE_API_KEY is not configured');
     }
 
     // Get user's country and currency for localized pricing
@@ -153,16 +154,20 @@ Guidelines:
 - Focus on common appliance issues: AC units, refrigerators, washing machines, microwaves, etc.
 - Include scam protection warnings about overpricing or unnecessary replacements common in ${userCountry}.
 - Urgency levels: critical (immediate danger/total failure), warning (needs attention soon), safe (minor issue)
-- Provide practical DIY steps when safe, otherwise recommend professional help`;
+- Provide practical DIY steps when safe, otherwise recommend professional help
+- IMPORTANT: Return ONLY valid JSON, no markdown formatting or code blocks.`;
 
     const userPrompt = description || "Diagnose the appliance issue shown in the provided media.";
 
-    console.log('Calling Google Gemini API for analysis...');
+    console.log('Calling Lovable AI Gateway for analysis...');
     
-    // Build parts for Gemini API
-    const parts: any[] = [{ text: systemPrompt + "\n\nUser input: " + userPrompt }];
+    // Build messages for Lovable AI Gateway
+    const messages: any[] = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ];
     
-    // If there's a file URL and it's an image, add it
+    // If there's a file URL and it's an image, add it to the message
     if (fileUrl && inputType === 'photo') {
       const filePath = fileUrl.split('/').slice(-2).join('/');
       const { data: signedUrlData, error: signedUrlError } = await supabase.storage
@@ -177,38 +182,55 @@ Guidelines:
           const base64Image = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)));
           const mimeType = imageResponse.headers.get('content-type') || 'image/jpeg';
           
-          parts.push({
-            inline_data: {
-              mime_type: mimeType,
-              data: base64Image
-            }
-          });
+          // Update user message to include image
+          messages[1] = {
+            role: 'user',
+            content: [
+              { type: 'text', text: userPrompt },
+              { 
+                type: 'image_url', 
+                image_url: { 
+                  url: `data:${mimeType};base64,${base64Image}` 
+                } 
+              }
+            ]
+          };
         } catch (imgError) {
           console.error('Error processing image:', imgError);
         }
       }
     }
 
-    const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`, {
+    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${lovableApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        contents: [{ parts }],
-        generationConfig: {
-          responseMimeType: "application/json"
-        }
+        model: 'google/gemini-2.5-flash',
+        messages,
       }),
     });
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
-      console.error('Gemini API error:', aiResponse.status, errorText);
+      console.error('Lovable AI Gateway error:', aiResponse.status, errorText);
       
       if (aiResponse.status === 429) {
         return new Response(JSON.stringify({ 
-          error: 'AI service rate limit exceeded. Please try again in a moment.' 
+          error: 'AI service rate limited',
+          message: 'AI service is temporarily unavailable. Please try again in a few moments.'
+        }), {
+          status: 503,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      if (aiResponse.status === 402) {
+        return new Response(JSON.stringify({ 
+          error: 'AI service payment required',
+          message: 'AI service credits exhausted. Please contact support.'
         }), {
           status: 503,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -223,14 +245,28 @@ Guidelines:
 
     let aiResult;
     try {
-      // Extract text from Gemini response format
-      const responseText = aiData.candidates?.[0]?.content?.parts?.[0]?.text;
+      // Extract text from OpenAI-compatible response format
+      const responseText = aiData.choices?.[0]?.message?.content;
       if (!responseText) {
         throw new Error('No response text from AI');
       }
-      aiResult = JSON.parse(responseText);
+      
+      // Clean up potential markdown formatting
+      let cleanedResponse = responseText.trim();
+      if (cleanedResponse.startsWith('```json')) {
+        cleanedResponse = cleanedResponse.slice(7);
+      } else if (cleanedResponse.startsWith('```')) {
+        cleanedResponse = cleanedResponse.slice(3);
+      }
+      if (cleanedResponse.endsWith('```')) {
+        cleanedResponse = cleanedResponse.slice(0, -3);
+      }
+      cleanedResponse = cleanedResponse.trim();
+      
+      aiResult = JSON.parse(cleanedResponse);
     } catch (parseError) {
       console.error('Error parsing AI response:', parseError);
+      console.error('Raw response:', aiData.choices?.[0]?.message?.content);
       throw new Error('Invalid AI response format');
     }
 
