@@ -5,7 +5,7 @@ import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Wrench, FileSearch, Home, LogOut, Upload, History, Building2, DollarSign, AlertTriangle, Calendar, Shield, Crown } from "lucide-react";
+import { FileSearch, Home, LogOut, Upload, History, Building2, DollarSign, AlertTriangle, Calendar, Shield, Crown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { MaintenanceCostWidget } from "@/components/dashboard/MaintenanceCostWidget";
@@ -208,9 +208,11 @@ const Dashboard = () => {
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between px-4">
           <Link to="/dashboard" className="flex items-center gap-2 font-bold text-xl">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <Wrench className="w-5 h-5 text-primary-foreground" />
-            </div>
+            <img
+              src="/android-chrome-512x512.png"
+              alt="FixSense Logo"
+              className="w-8 h-8 rounded-lg"
+            />
             <span>FixSense</span>
           </Link>
 

@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Wrench } from "lucide-react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export const Footer = () => {
@@ -13,9 +12,7 @@ export const Footer = () => {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link to="/" className="flex items-center gap-2 font-bold text-xl mb-4">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <Wrench className="w-5 h-5 text-primary-foreground" />
-              </div>
+              <img src="/android-chrome-512x512.png" alt="FixSense Logo" className="w-8 h-8 rounded-lg" />
               <span>FixSense</span>
             </Link>
             <p className="text-sm text-muted-foreground">

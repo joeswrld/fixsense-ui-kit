@@ -1,14 +1,13 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { 
-  Users, 
-  CreditCard, 
-  BarChart3, 
-  Settings, 
-  Shield,
+import {
+  Users,
+  CreditCard,
+  BarChart3,
+  Settings,
   Menu,
-  LogOut
+  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,7 +42,11 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
     <div className="flex flex-col h-full">
       <div className="p-6 border-b border-border">
         <div className="flex items-center gap-2">
-          <Shield className="w-6 h-6 text-primary" />
+          <img
+            src="/android-chrome-512x512.png"
+            alt="FixSense Logo"
+            className="w-6 h-6 rounded"
+          />
           <div>
             <h2 className="font-bold text-lg">Admin Panel</h2>
             <Badge variant="secondary" className="text-xs mt-1">Administrator</Badge>
@@ -99,7 +102,11 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
         {/* Mobile Header */}
         <header className="lg:hidden border-b border-border bg-card p-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Shield className="w-6 h-6 text-primary" />
+            <img
+              src="/android-chrome-512x512.png"
+              alt="FixSense Logo"
+              className="w-6 h-6 rounded"
+            />
             <span className="font-bold">Admin Panel</span>
           </div>
           <Sheet>
