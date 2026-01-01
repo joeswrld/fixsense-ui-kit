@@ -189,8 +189,8 @@ Guidelines:
       }
     }
 
-    // Use gemini-1.5-flash which has better quota limits
-    const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
+    // Call Gemini using a supported model
+    const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -206,11 +206,21 @@ Guidelines:
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
       console.error('Gemini API error:', aiResponse.status, errorText);
-      
+
       if (aiResponse.status === 429) {
         return new Response(JSON.stringify({ 
           error: 'AI service rate limited',
           message: 'AI service is temporarily unavailable. Please try again in a few moments.'
+        }), {
+          status: 503,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      if (aiResponse.status === 404) {
+        return new Response(JSON.stringify({
+          error: 'AI model unavailable',
+          message: 'Gemini model is not available for this API key/project. Please verify your Gemini API plan/model access in Google AI Studio.'
         }), {
           status: 503,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
