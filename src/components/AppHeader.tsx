@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Wrench, LogOut, Crown } from "lucide-react";
+import { LogOut, Crown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -93,9 +93,7 @@ export const AppHeader = () => {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between px-4">
         <Link to="/dashboard" className="flex items-center gap-2 font-bold text-xl">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-            <Wrench className="w-5 h-5 text-primary-foreground" />
-          </div>
+          <img src="/android-chrome-512x512.png" alt="FixSense Logo" className="w-8 h-8 rounded-lg" />
           <span>FixSense</span>
         </Link>
 
