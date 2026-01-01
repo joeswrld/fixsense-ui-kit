@@ -41,9 +41,11 @@ const Landing = () => {
             {/* Brand Column */}
             <div className="md:col-span-2">
               <div className="flex items-center gap-2 font-bold text-xl mb-4">
-                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                  <span className="text-primary-foreground">🔧</span>
-                </div>
+                <img
+                  src="/android-chrome-512x512.png"
+                  alt="FixSense Logo"
+                  className="w-8 h-8 rounded-lg"
+                />
                 <span>FixSense</span>
               </div>
               <p className="text-sm text-muted-foreground max-w-md mb-4">
