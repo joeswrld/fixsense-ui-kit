@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
+import { SEO } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -205,6 +206,12 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-accent/10">
+      <SEO 
+        title="Dashboard"
+        canonicalUrl="/dashboard"
+        description="Manage your appliance diagnostics, maintenance schedules, and properties from your FixSense dashboard."
+        noIndex={true}
+      />
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between px-4">
           <Link to="/dashboard" className="flex items-center gap-2 font-bold text-xl">

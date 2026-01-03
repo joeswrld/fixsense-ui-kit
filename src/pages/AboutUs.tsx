@@ -1,3 +1,4 @@
+import { SEO } from "@/components/SEO";
 import { Header } from "@/components/landing/Header";
 import { Footer } from "@/components/landing/Footer";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,6 +8,12 @@ import { Link } from "react-router-dom";
 const AboutUs = () => {
   return (
     <div className="min-h-screen bg-background">
+      <SEO 
+        title="About Us"
+        canonicalUrl="/about"
+        description="Learn about FixSense - our mission to revolutionize appliance diagnostics for Airbnb hosts and property managers using AI technology."
+        keywords="FixSense about, appliance diagnostics company, AI maintenance tool, property management solution"
+      />
       <Header />
       
       <main className="container px-4 py-16">

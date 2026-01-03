@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { SEO } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -285,6 +286,13 @@ const Diagnose = () => {
 
   return (
     <div className="min-h-screen bg-accent/10">
+      <SEO 
+        title="Diagnose Appliance"
+        canonicalUrl="/diagnose"
+        description="Upload photos, videos, or audio to get instant AI-powered appliance diagnostics. Get accurate repair cost estimates and avoid scams."
+        keywords="diagnose appliance, AI diagnostics, appliance repair, troubleshoot appliance, instant diagnosis"
+        noIndex={true}
+      />
       <AppHeader />
 
       <main className="container px-4 py-8">

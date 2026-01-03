@@ -1,3 +1,4 @@
+import { SEO } from "@/components/SEO";
 import { Header } from "@/components/landing/Header";
 import { HeroSection } from "@/components/landing/HeroSection";
 import { FeaturesSection } from "@/components/landing/FeaturesSection";
@@ -8,11 +9,15 @@ import PricingSection from "@/components/landing/PricingSection";
 import { FAQSection } from "@/components/landing/FAQSection";
 import { CTASection } from "@/components/landing/CTASection";
 import { Link } from "react-router-dom";
-import { Mail, Twitter, Linkedin, Instagram } from "lucide-react";
 
 const Landing = () => {
   return (
     <div className="min-h-screen">
+      <SEO 
+        canonicalUrl="/"
+        description="Get instant AI-powered diagnosis and accurate cost estimates for home appliance issues worldwide. Perfect for Airbnb hosts, property managers, and homeowners. Upload photos, videos, or audio for instant analysis."
+        keywords="AI appliance diagnostics, Airbnb maintenance tool, property management, appliance repair cost estimate, smart home diagnostics, predictive maintenance, avoid repair scams"
+      />
       <Header />
       <HeroSection />
       
