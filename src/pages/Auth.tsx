@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { SEO } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -180,6 +181,12 @@ const Auth = () => {
   if (showForgotPassword) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-accent/10 p-4">
+        <SEO 
+          title="Reset Password"
+          canonicalUrl="/auth"
+          description="Reset your FixSense account password. Get back to managing your appliance diagnostics quickly."
+          noIndex={true}
+        />
         <Card className="w-full max-w-md">
           <CardHeader className="text-center space-y-3">
             <Link to="/" className="flex items-center justify-center gap-2 font-bold text-2xl">
@@ -232,6 +239,12 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-accent/10 p-4">
+      <SEO 
+        title="Sign In or Sign Up"
+        canonicalUrl="/auth"
+        description="Sign in or create a FixSense account to get AI-powered appliance diagnostics. Free to start, no credit card required."
+        keywords="FixSense login, sign up, appliance diagnostics account, property management login"
+      />
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-3">
           <Link to="/" className="flex items-center justify-center gap-2 font-bold text-2xl">
