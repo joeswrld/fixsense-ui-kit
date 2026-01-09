@@ -6,10 +6,11 @@ import { SEO } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileSearch, Home, LogOut, Upload, History, Building2, DollarSign, AlertTriangle, Calendar, Shield, Crown } from "lucide-react";
+import { FileSearch, LogOut, Upload, History, Building2, DollarSign, AlertTriangle, Calendar, Shield, Crown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { MaintenanceCostWidget } from "@/components/dashboard/MaintenanceCostWidget";
+import { SubscriptionStatusBanner } from "@/components/dashboard/SubscriptionStatusBanner";
 import { calculateEstimatedSavings } from "@/lib/countrySavingsEstimate";
 
 interface Diagnostic {
@@ -246,6 +247,8 @@ const Dashboard = () => {
 
       <main className="container px-4 py-8">
         <div className="max-w-6xl mx-auto space-y-8">
+          <SubscriptionStatusBanner />
+          
           <div>
             <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
             <p className="text-muted-foreground">Welcome back! What would you like to do today?</p>
