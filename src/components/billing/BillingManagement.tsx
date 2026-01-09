@@ -172,11 +172,11 @@ export const BillingManagement = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { data, error } = await supabase.functions.invoke("paystack-initialize-transaction", {
+      // Use the new subscription endpoint for recurring billing
+      const { data, error } = await supabase.functions.invoke("paystack-create-subscription", {
         body: {
           email: profile?.email || user.email,
-          amount: plan.price,
-          plan: plan.name,
+          plan: plan.tier, // 'pro' or 'business'
           callback_url: window.location.origin + "/settings?tab=billing",
         },
       });
@@ -185,9 +185,11 @@ export const BillingManagement = () => {
 
       if (data.data?.authorization_url) {
         window.location.href = data.data.authorization_url;
+      } else {
+        throw new Error("No authorization URL returned");
       }
     } catch (error: any) {
-      toast.error("Failed to initialize payment");
+      toast.error(error.message || "Failed to initialize payment");
       console.error(error);
     } finally {
       setProcessingPlan(null);
