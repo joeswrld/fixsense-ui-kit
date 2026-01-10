@@ -5,11 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Crown, Loader2, Receipt, Calendar, CreditCard, Download, Info } from "lucide-react";
+import { CheckCircle2, Crown, Loader2, Receipt, Calendar, CreditCard, Download, Info, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 import UsageSection from '@/components/billing/UsageSection';
-
+import { SubscriptionStatusAlert } from '@/components/billing/SubscriptionStatusAlert';
+import { useSubscriptionEnforcement } from '@/hooks/useSubscriptionEnforcement';
 // Fixed exchange rate configuration (₦1500 = $1)
 const FX_CONFIG = {
   NGN_TO_USD: 1500,
@@ -434,8 +435,24 @@ export const BillingManagement = () => {
   const isPaidUser = isActive && currentTier !== "free";
   const currentPlan = plans.find(p => p.tier === currentTier);
 
+  const handleRenew = () => {
+    const renewPlan = plans.find(p => p.tier === currentTier);
+    if (renewPlan && renewPlan.tier !== 'free') {
+      initializePayment(renewPlan);
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* Subscription Status Alert */}
+      <SubscriptionStatusAlert 
+        onUpgrade={() => {
+          const proPlan = plans.find(p => p.tier === 'pro');
+          if (proPlan) initializePayment(proPlan);
+        }}
+        onRenew={handleRenew}
+      />
+
       {/* Payment Disclaimer */}
       <div className="flex items-start gap-2 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg px-4 py-3 text-sm text-blue-800 dark:text-blue-200">
         <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />

@@ -18,7 +18,8 @@ import {
   Crown,
   Loader2,
   CheckCircle2,
-  Lock
+  Lock,
+  RefreshCw
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUsageEnforcement } from '@/hooks/useUsageEnforcement';
@@ -71,7 +72,8 @@ const UsageSection: React.FC<UsageSectionProps> = ({ onUpgrade, onBuyCredits }) 
   const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false);
   const [processingPlan, setProcessingPlan] = useState<string | null>(null);
   
-  const { usage, isLoading, checkUsage, tier, refetchUsage } = useUsageEnforcement();
+  const { usage, isLoading, checkUsage, tier, refetchUsage, getBillingCycleInfo, subscriptionStatus } = useUsageEnforcement();
+  const billingCycle = getBillingCycleInfo();
 
   const initializePayment = async (plan: typeof plans[0]) => {
     try {
@@ -134,16 +136,27 @@ const UsageSection: React.FC<UsageSectionProps> = ({ onUpgrade, onBuyCredits }) 
     return 'text-foreground';
   };
 
-  const formatResetDate = (dateString: string): string => {
-    try {
-      return new Date(dateString).toLocaleDateString('en-US', {
+  const formatResetDate = (): string => {
+    if (billingCycle.currentPeriodEnd) {
+      return billingCycle.currentPeriodEnd.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
       });
-    } catch {
-      return dateString;
     }
+    // Fallback to usage data
+    if (usage?.current_period_end) {
+      try {
+        return new Date(usage.current_period_end).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+      } catch {
+        return 'End of billing cycle';
+      }
+    }
+    return 'End of billing cycle';
   };
 
   if (isLoading || !usage) {
@@ -236,14 +249,26 @@ const UsageSection: React.FC<UsageSectionProps> = ({ onUpgrade, onBuyCredits }) 
           </Alert>
         )}
 
-        <div className="flex items-center justify-between text-sm text-muted-foreground bg-muted/30 p-3 rounded-lg">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-sm text-muted-foreground bg-muted/30 p-3 rounded-lg">
           <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4" />
-            <span>Quota resets on: <strong>{formatResetDate(usage.current_period_end)}</strong></span>
+            <RefreshCw className="w-4 h-4" />
+            <span>
+              Usage resets on: <strong>{formatResetDate()}</strong>
+              {billingCycle.daysRemaining > 0 && (
+                <span className="ml-2 text-xs">({billingCycle.daysRemaining} day{billingCycle.daysRemaining === 1 ? '' : 's'} remaining)</span>
+              )}
+            </span>
           </div>
-          <Badge variant="outline" className="capitalize">
-            {tier} Plan
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="capitalize">
+              {tier} Plan
+            </Badge>
+            {subscriptionStatus === 'active' && tier !== 'free' && (
+              <Badge variant="default" className="bg-green-600 text-xs">
+                Active
+              </Badge>
+            )}
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6">
