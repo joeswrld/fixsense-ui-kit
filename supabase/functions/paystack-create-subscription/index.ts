@@ -89,7 +89,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(`Invalid plan: ${plan}. Must be 'pro' or 'business'`);
     }
 
-    console.log(`Creating subscription for user ${user.id}, plan: ${plan}`);
+    console.log(`Creating subscription for user ${user.id}, plan: ${plan}, plan_code: ${planConfig.code}`);
 
     // Check if user already has an active subscription
     const { data: profile } = await supabase
