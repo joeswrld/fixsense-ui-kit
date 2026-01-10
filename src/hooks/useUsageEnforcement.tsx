@@ -13,8 +13,10 @@ interface UsageLimits {
   properties_used: number;
   properties_limit: number;
   subscription_tier: string;
+  subscription_status?: string;
   current_period_start?: string;
   current_period_end?: string;
+  subscription_end_date?: string;
 }
 
 interface UsageCheck {
@@ -24,6 +26,15 @@ interface UsageCheck {
   remaining: number;
   usage: number;
   limit: number;
+}
+
+interface BillingCycleInfo {
+  currentPeriodStart: Date | null;
+  currentPeriodEnd: Date | null;
+  daysRemaining: number;
+  daysElapsed: number;
+  cycleLength: number;
+  isInBillingCycle: boolean;
 }
 
 export const useUsageEnforcement = () => {
@@ -102,11 +113,68 @@ export const useUsageEnforcement = () => {
     };
   };
 
+  // Calculate billing cycle information
+  const getBillingCycleInfo = (): BillingCycleInfo => {
+    if (!usage) {
+      return {
+        currentPeriodStart: null,
+        currentPeriodEnd: null,
+        daysRemaining: 0,
+        daysElapsed: 0,
+        cycleLength: 30,
+        isInBillingCycle: false
+      };
+    }
+
+    const now = new Date();
+    let periodStart: Date | null = null;
+    let periodEnd: Date | null = null;
+
+    // Use subscription dates for paid users, calendar month for free users
+    if (usage.subscription_tier !== 'free' && usage.current_period_start && usage.current_period_end) {
+      periodStart = new Date(usage.current_period_start);
+      periodEnd = new Date(usage.current_period_end);
+    } else {
+      // Free tier: use calendar month
+      periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    }
+
+    const cycleLength = Math.ceil((periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24));
+    const daysElapsed = Math.ceil((now.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24));
+    const daysRemaining = Math.max(0, cycleLength - daysElapsed);
+    const isInBillingCycle = now >= periodStart && now <= periodEnd;
+
+    return {
+      currentPeriodStart: periodStart,
+      currentPeriodEnd: periodEnd,
+      daysRemaining,
+      daysElapsed,
+      cycleLength,
+      isInBillingCycle
+    };
+  };
+
+  // Check if usage should be reset (for display purposes - actual reset happens server-side)
+  const shouldResetUsage = (): boolean => {
+    if (!usage) return false;
+    
+    const { currentPeriodEnd } = getBillingCycleInfo();
+    if (!currentPeriodEnd) return false;
+
+    const now = new Date();
+    return now > currentPeriodEnd;
+  };
+
   return {
     usage,
     isLoading,
     checkUsage,
     refetchUsage: refetch,
-    tier: usage?.subscription_tier || 'free'
+    tier: usage?.subscription_tier || 'free',
+    getBillingCycleInfo,
+    shouldResetUsage,
+    subscriptionStatus: usage?.subscription_status,
+    isSubscriptionActive: usage?.subscription_status === 'active'
   };
 };
