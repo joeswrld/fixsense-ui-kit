@@ -17,19 +17,31 @@ interface CreateSubscriptionRequest {
   callback_url: string;
 }
 
-// Plan codes - these should match your Paystack dashboard plans
-// You need to create these plans in Paystack dashboard first!
-const PLAN_CODES: Record<string, { code: string; name: string; amount: number }> = {
-  pro: {
-    code: Deno.env.get("PAYSTACK_PRO_PLAN_CODE") || "PLN_pro_monthly",
-    name: "Pro",
-    amount: 530000, // ₦5,300 in kobo
-  },
-  business: {
-    code: Deno.env.get("PAYSTACK_BUSINESS_PLAN_CODE") || "PLN_business_monthly", 
-    name: "Host Business",
-    amount: 1430000, // ₦14,300 in kobo
-  },
+// Plan codes - these MUST be set as Supabase secrets
+// Create plans in Paystack dashboard first, then add the plan codes as secrets
+const getPlanConfig = (plan: string): { code: string; name: string; amount: number } | null => {
+  const proPlanCode = Deno.env.get("PAYSTACK_PRO_PLAN_CODE");
+  const businessPlanCode = Deno.env.get("PAYSTACK_BUSINESS_PLAN_CODE");
+  
+  const configs: Record<string, { code: string | undefined; name: string; amount: number }> = {
+    pro: {
+      code: proPlanCode,
+      name: "Pro",
+      amount: 530000, // ₦5,300 in kobo
+    },
+    business: {
+      code: businessPlanCode,
+      name: "Host Business",
+      amount: 1430000, // ₦14,300 in kobo
+    },
+  };
+  
+  const config = configs[plan.toLowerCase()];
+  if (!config || !config.code) {
+    return null;
+  }
+  
+  return { code: config.code, name: config.name, amount: config.amount };
 };
 
 const handler = async (req: Request): Promise<Response> => {
@@ -62,9 +74,18 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { email, plan, callback_url } = await req.json() as CreateSubscriptionRequest;
 
-    // Validate plan
-    const planConfig = PLAN_CODES[plan.toLowerCase()];
+    // Validate plan and get config
+    const planConfig = getPlanConfig(plan);
     if (!planConfig) {
+      const proPlanCode = Deno.env.get("PAYSTACK_PRO_PLAN_CODE");
+      const businessPlanCode = Deno.env.get("PAYSTACK_BUSINESS_PLAN_CODE");
+      
+      if (plan.toLowerCase() === 'pro' && !proPlanCode) {
+        throw new Error("PAYSTACK_PRO_PLAN_CODE secret is not configured. Please add your Paystack Pro plan code in Supabase secrets.");
+      }
+      if (plan.toLowerCase() === 'business' && !businessPlanCode) {
+        throw new Error("PAYSTACK_BUSINESS_PLAN_CODE secret is not configured. Please add your Paystack Business plan code in Supabase secrets.");
+      }
       throw new Error(`Invalid plan: ${plan}. Must be 'pro' or 'business'`);
     }
 
