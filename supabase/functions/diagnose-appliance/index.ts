@@ -13,6 +13,38 @@ const USAGE_LIMITS = {
   business: { photo: 60, video: 5, audio: 20, text: 150 },
 };
 
+/**
+ * Sanitizes user-provided description to prevent prompt injection attacks.
+ * This limits length and removes common injection patterns.
+ */
+function sanitizeDescription(desc: string | undefined): string {
+  if (!desc) return "Diagnose the appliance issue shown in the provided media.";
+  
+  // Limit length to prevent abuse
+  const maxLength = 1000;
+  const trimmed = desc.substring(0, maxLength).trim();
+  
+  // Remove common prompt injection patterns
+  const sanitized = trimmed
+    // Remove role indicators that could confuse the AI
+    .replace(/\b(system|assistant|user)\s*:/gi, '')
+    // Remove instruction override attempts
+    .replace(/ignore\s+(previous|above|all|any|the)\s+instructions?/gi, '')
+    .replace(/disregard\s+(previous|above|all|any|the)\s+instructions?/gi, '')
+    .replace(/forget\s+(previous|above|all|any|the)\s+instructions?/gi, '')
+    // Remove bracketed commands
+    .replace(/\[\[.*?\]\]/g, '')
+    // Remove special token patterns
+    .replace(/<\|.*?\|>/g, '')
+    // Remove attempts to end/start new prompts
+    .replace(/```/g, '')
+    // Limit consecutive special characters
+    .replace(/[#*_~`]{3,}/g, '')
+    .trim();
+  
+  return sanitized || "Diagnose the appliance issue shown in the provided media.";
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -157,7 +189,7 @@ Guidelines:
 - Provide practical DIY steps when safe, otherwise recommend professional help
 - IMPORTANT: Return ONLY valid JSON, no markdown formatting or code blocks.`;
 
-    const userPrompt = description || "Diagnose the appliance issue shown in the provided media.";
+    const userPrompt = sanitizeDescription(description);
 
     console.log('Calling Lovable AI Gateway...');
     
