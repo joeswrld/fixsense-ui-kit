@@ -141,13 +141,13 @@ export const PricingSection = () => {
     try {
       setProcessingPlan(plan.tier);
 
+      // Use the recurring subscription endpoint for monthly billing
       const { data, error } = await supabase.functions.invoke(
-        "paystack-initialize-transaction",
+        "paystack-create-subscription",
         {
           body: {
             email: user.email,
-            amount: plan.priceKobo,
-            plan: t(`landing.pricing.${plan.nameKey}`),
+            plan: plan.tier, // 'pro' or 'business'
             callback_url: window.location.origin + "/settings?tab=billing",
           },
         }

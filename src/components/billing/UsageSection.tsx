@@ -89,11 +89,11 @@ const UsageSection: React.FC<UsageSectionProps> = ({ onUpgrade, onBuyCredits }) 
         .eq('id', user.id)
         .single();
 
-      const { data, error } = await supabase.functions.invoke("paystack-initialize-transaction", {
+      // Use the recurring subscription endpoint for monthly billing
+      const { data, error } = await supabase.functions.invoke("paystack-create-subscription", {
         body: {
           email: profile?.email || user.email,
-          amount: plan.price,
-          plan: plan.name,
+          plan: plan.tier, // 'pro' or 'business'
           callback_url: window.location.origin + "/settings?tab=billing",
         },
       });
