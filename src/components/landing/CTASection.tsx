@@ -1,10 +1,23 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, Sparkles, Check } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { supabase } from "@/integrations/supabase/client";
+import { User } from "@supabase/supabase-js";
 
 export const CTASection = () => {
   const { t } = useTranslation();
+  const [user, setUser] = useState<User | null>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => setUser(session?.user ?? null)
+    );
+    return () => subscription.unsubscribe();
+  }, []);
 
   return (
     <section className="py-20 md:py-32 bg-gradient-to-br from-accent/30 via-background to-primary/5">
@@ -25,33 +38,40 @@ export const CTASection = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
-            <Button size="lg" asChild className="min-w-[200px] group">
-              <Link to="/auth">
-                {t('landing.cta.getStartedFree')}
+            {user ? (
+              <Button size="lg" className="min-w-[200px] group" onClick={() => navigate("/dashboard")}>
+                {t('landing.hero.goToDashboard')}
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </Button>
+              </Button>
+            ) : (
+              <Button size="lg" asChild className="min-w-[200px] group">
+                <Link to="/auth">
+                  {t('landing.cta.getStartedFree')}
+                  <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </Button>
+            )}
             <Button size="lg" variant="outline" asChild className="min-w-[200px]">
-              <Link to="/pricing">{t('landing.cta.viewPricing')}</Link>
+              <a href="#pricing">{t('landing.cta.viewPricing')}</a>
             </Button>
           </div>
 
           <div className="flex flex-wrap justify-center gap-6 pt-8 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
-                <Check className="w-3 h-3 text-white" />
+                <Check className="w-3 h-3 text-primary-foreground" />
               </div>
               <span>{t('landing.cta.freeTierAvailable')}</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
-                <Check className="w-3 h-3 text-white" />
+                <Check className="w-3 h-3 text-primary-foreground" />
               </div>
               <span>{t('landing.cta.noCreditCard')}</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
-                <Check className="w-3 h-3 text-white" />
+                <Check className="w-3 h-3 text-primary-foreground" />
               </div>
               <span>{t('landing.cta.cancelAnytime')}</span>
             </div>
