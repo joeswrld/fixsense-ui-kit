@@ -103,7 +103,51 @@ export const PricingSection = () => {
   const { t } = useTranslation();
 
   useEffect(() => {
+    // Use getSession (cached, instant) instead of getUser (network call)
+    const checkAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+
+        if (currentUser) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('subscription_tier')
+            .eq('id', currentUser.id)
+            .single();
+          
+          setCurrentTier(profile?.subscription_tier || 'free');
+        }
+      } catch (error) {
+        console.error('Error checking auth:', error);
+      } finally {
+        setAuthLoading(false);
+      }
+    };
+
     checkAuth();
+
+    // Listen for auth changes so pricing updates on login/logout
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) {
+        supabase
+          .from('profiles')
+          .select('subscription_tier')
+          .eq('id', currentUser.id)
+          .single()
+          .then(({ data: profile }) => {
+            setCurrentTier(profile?.subscription_tier || 'free');
+          });
+      } else {
+        setCurrentTier('free');
+      }
+      setAuthLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -115,27 +159,6 @@ export const PricingSection = () => {
       }
     }
   }, [user, searchParams]);
-
-  const checkAuth = async () => {
-    try {
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      setUser(currentUser);
-
-      if (currentUser) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('subscription_tier')
-          .eq('id', currentUser.id)
-          .single();
-        
-        setCurrentTier(profile?.subscription_tier || 'free');
-      }
-    } catch (error) {
-      console.error('Error checking auth:', error);
-    } finally {
-      setAuthLoading(false);
-    }
-  };
 
   const initializePaystackCheckout = async (plan: typeof plans[0]) => {
     try {
@@ -217,13 +240,8 @@ export const PricingSection = () => {
     return `${feature.count} ${t(`landing.pricing.features.${feature.key}`)}`;
   };
 
-  if (authLoading) {
-    return (
-      <div className="py-20 px-4 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  // No loading gate — plans are static and render immediately.
+  // Auth state updates button text/state asynchronously.
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-accent/10 to-background py-20 px-4">
