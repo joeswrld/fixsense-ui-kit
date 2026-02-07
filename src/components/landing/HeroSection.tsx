@@ -48,10 +48,19 @@ export const HeroSection = () => {
       
       <div className="container relative z-10 px-4 py-16 md:py-24">
         <div className="max-w-4xl mx-auto text-center space-y-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-card/80 backdrop-blur-sm animate-fade-in">
-            <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-            <span className="text-sm font-medium">{t('landing.hero.badge')}</span>
-          </div>
+          {user && (
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-green-500/30 bg-green-500/10 backdrop-blur-sm animate-fade-in">
+              <ShieldCheck className="w-4 h-4 text-green-500" />
+              <span className="text-sm font-medium">Welcome back! You're logged in</span>
+            </div>
+          )}
+          
+          {!user && (
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-card/80 backdrop-blur-sm animate-fade-in">
+              <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+              <span className="text-sm font-medium">{t('landing.hero.badge')}</span>
+            </div>
+          )}
 
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight animate-fade-in-up">
             {t('landing.hero.title')}{" "}
@@ -110,7 +119,7 @@ export const HeroSection = () => {
                 {[1, 2, 3, 4, 5].map((i) => (
                   <div 
                     key={i}
-                    className="w-8 md:w-10 h-8 md:h-10 rounded-full bg-gradient-to-br from-primary to-purple-500 border-2 border-background flex items-center justify-center text-xs font-bold text-white"
+                    className="w-8 md:w-10 h-8 md:h-10 rounded-full bg-gradient-to-br from-primary to-purple-500 border-2 border-background flex items-center justify-center text-xs font-bold text-primary-foreground"
                   >
                     {String.fromCharCode(64 + i)}
                   </div>
