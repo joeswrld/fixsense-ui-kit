@@ -95,36 +95,34 @@ const AdminUsers = () => {
     },
   });
 
-  const updateUserRole = useMutation({
-    mutationFn: async ({ userId, newRole }: { userId: string; newRole: string }) => {
+  const updateUserPlan = useMutation({
+    mutationFn: async ({ userId, newTier }: { userId: string; newTier: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Delete existing roles
-      await supabase.from("user_roles").delete().eq("user_id", userId);
-
-      // Insert new role
+      // Update subscription tier in profiles
       const { error } = await supabase
-        .from("user_roles")
-        .insert([{ user_id: userId, role: newRole as any }]);
+        .from("profiles")
+        .update({ subscription_tier: newTier })
+        .eq("id", userId);
 
       if (error) throw error;
 
       // Log admin action
       await supabase.from("admin_logs").insert({
         admin_id: user.id,
-        action: "update_user_role",
+        action: "update_user_plan",
         target_user_id: userId,
-        details: { new_role: newRole },
+        details: { new_tier: newTier },
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
-      toast({ title: "User role updated successfully" });
+      toast({ title: "User plan updated successfully" });
     },
     onError: (error) => {
       toast({ 
-        title: "Failed to update user role", 
+        title: "Failed to update user plan", 
         description: error.message,
         variant: "destructive" 
       });
@@ -304,17 +302,17 @@ const AdminUsers = () => {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem 
-                            onClick={() => updateUserRole.mutate({ userId: user.id, newRole: "pro" })}
+                            onClick={() => updateUserPlan.mutate({ userId: user.id, newTier: "pro" })}
                           >
                             Upgrade to Pro
                           </DropdownMenuItem>
                           <DropdownMenuItem 
-                            onClick={() => updateUserRole.mutate({ userId: user.id, newRole: "business" })}
+                            onClick={() => updateUserPlan.mutate({ userId: user.id, newTier: "business" })}
                           >
                             Upgrade to Business
                           </DropdownMenuItem>
                           <DropdownMenuItem 
-                            onClick={() => updateUserRole.mutate({ userId: user.id, newRole: "free" })}
+                            onClick={() => updateUserPlan.mutate({ userId: user.id, newTier: "free" })}
                           >
                             Downgrade to Free
                           </DropdownMenuItem>
