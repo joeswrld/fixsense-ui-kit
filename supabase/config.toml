@@ -44,3 +44,6 @@ verify_jwt = false
 
 [functions.check-subscription-access]
 verify_jwt = true
+
+[functions.retry-failed-payments]
+verify_jwt = false

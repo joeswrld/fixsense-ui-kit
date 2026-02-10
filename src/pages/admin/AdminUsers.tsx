@@ -239,103 +239,142 @@ const AdminUsers = () => {
           </Select>
         </div>
 
-        <div className="border rounded-lg overflow-x-auto">
-          {isLoading ? (
-            <div className="flex items-center justify-center p-8">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        {isLoading ? (
+          <div className="flex items-center justify-center p-8">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <>
+            {/* Mobile Card Layout */}
+            <div className="md:hidden space-y-3">
+              {users?.map((user) => (
+                <div key={user.id} className="border rounded-lg p-4 bg-card space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium truncate">{user.full_name || "No name"}</div>
+                      <div className="text-sm text-muted-foreground truncate">{user.email}</div>
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="shrink-0">
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => updateUserPlan.mutate({ userId: user.id, newTier: "pro" })}>
+                          Upgrade to Pro
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => updateUserPlan.mutate({ userId: user.id, newTier: "business" })}>
+                          Upgrade to Business
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => updateUserPlan.mutate({ userId: user.id, newTier: "free" })}>
+                          Downgrade to Free
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => updateUserStatus.mutate({ userId: user.id, status: user.subscription_status === "active" ? "suspended" : "active" })}>
+                          {user.subscription_status === "active" ? "Suspend" : "Activate"}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => resetUserLimits.mutate(user.id)}>
+                          Reset Usage Limits
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant={user.subscription_tier === "free" ? "secondary" : "default"}>
+                      {user.subscription_tier}
+                    </Badge>
+                    <Badge variant={user.subscription_status === "active" ? "default" : user.subscription_status === "expired" ? "destructive" : "secondary"}>
+                      {user.subscription_status}
+                    </Badge>
+                    <Badge variant={user.role === "admin" ? "destructive" : "outline"}>
+                      {user.role}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{user.country || "No country"}</span>
+                    <span>{format(new Date(user.created_at), "MMM d, yyyy")}</span>
+                  </div>
+                </div>
+              ))}
             </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="min-w-[200px]">User</TableHead>
-                  <TableHead className="hidden md:table-cell">Contact</TableHead>
-                  <TableHead className="hidden lg:table-cell">Country</TableHead>
-                  <TableHead>Plan</TableHead>
-                  <TableHead className="hidden sm:table-cell">Status</TableHead>
-                  <TableHead className="hidden lg:table-cell">Role</TableHead>
-                  <TableHead className="hidden md:table-cell">Joined</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users?.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{user.full_name || "No name"}</div>
-                        <div className="text-sm text-muted-foreground truncate max-w-[180px]">{user.email}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-sm">{user.phone || "—"}</TableCell>
-                    <TableCell className="hidden lg:table-cell">{user.country || "—"}</TableCell>
-                    <TableCell>
-                      <Badge variant={user.subscription_tier === "free" ? "secondary" : "default"}>
-                        {user.subscription_tier}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <Badge 
-                        variant={
-                          user.subscription_status === "active" ? "default" :
-                          user.subscription_status === "expired" ? "destructive" : 
-                          "secondary"
-                        }
-                      >
-                        {user.subscription_status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="hidden lg:table-cell">
-                      <Badge variant={user.role === "admin" ? "destructive" : "outline"}>
-                        {user.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-sm">
-                      {format(new Date(user.created_at), "MMM d, yyyy")}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem 
-                            onClick={() => updateUserPlan.mutate({ userId: user.id, newTier: "pro" })}
-                          >
-                            Upgrade to Pro
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => updateUserPlan.mutate({ userId: user.id, newTier: "business" })}
-                          >
-                            Upgrade to Business
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => updateUserPlan.mutate({ userId: user.id, newTier: "free" })}
-                          >
-                            Downgrade to Free
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => updateUserStatus.mutate({ 
-                              userId: user.id, 
-                              status: user.subscription_status === "active" ? "suspended" : "active" 
-                            })}
-                          >
-                            {user.subscription_status === "active" ? "Suspend" : "Activate"}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => resetUserLimits.mutate(user.id)}>
-                            Reset Usage Limits
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+
+            {/* Desktop Table Layout */}
+            <div className="hidden md:block border rounded-lg overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="min-w-[200px]">User</TableHead>
+                    <TableHead>Contact</TableHead>
+                    <TableHead className="hidden lg:table-cell">Country</TableHead>
+                    <TableHead>Plan</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="hidden lg:table-cell">Role</TableHead>
+                    <TableHead className="hidden lg:table-cell">Joined</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </div>
+                </TableHeader>
+                <TableBody>
+                  {users?.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{user.full_name || "No name"}</div>
+                          <div className="text-sm text-muted-foreground truncate max-w-[180px]">{user.email}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm">{user.phone || "—"}</TableCell>
+                      <TableCell className="hidden lg:table-cell">{user.country || "—"}</TableCell>
+                      <TableCell>
+                        <Badge variant={user.subscription_tier === "free" ? "secondary" : "default"}>
+                          {user.subscription_tier}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={user.subscription_status === "active" ? "default" : user.subscription_status === "expired" ? "destructive" : "secondary"}>
+                          {user.subscription_status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        <Badge variant={user.role === "admin" ? "destructive" : "outline"}>
+                          {user.role}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell text-sm">
+                        {format(new Date(user.created_at), "MMM d, yyyy")}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => updateUserPlan.mutate({ userId: user.id, newTier: "pro" })}>
+                              Upgrade to Pro
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => updateUserPlan.mutate({ userId: user.id, newTier: "business" })}>
+                              Upgrade to Business
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => updateUserPlan.mutate({ userId: user.id, newTier: "free" })}>
+                              Downgrade to Free
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => updateUserStatus.mutate({ userId: user.id, status: user.subscription_status === "active" ? "suspended" : "active" })}>
+                              {user.subscription_status === "active" ? "Suspend" : "Activate"}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => resetUserLimits.mutate(user.id)}>
+                              Reset Usage Limits
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
+        )}
 
         {users && users.length === 0 && (
           <div className="text-center py-8 text-muted-foreground">
