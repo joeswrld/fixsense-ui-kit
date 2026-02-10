@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { SEO } from "@/components/SEO";
 import { Header } from "@/components/landing/Header";
 import { Footer } from "@/components/landing/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,6 +38,12 @@ const Contact = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO 
+        title="Contact Us"
+        canonicalUrl="/contact"
+        description="Get in touch with FixSense. Have questions about AI appliance diagnostics? We're here to help Airbnb hosts and property managers."
+        keywords="FixSense contact, appliance diagnostics support, property management help, customer service"
+      />
       <Header />
       
       <main className="container px-4 py-16">

@@ -1,3 +1,4 @@
+import { SEO } from "@/components/SEO";
 import { Header } from "@/components/landing/Header";
 import { Footer } from "@/components/landing/Footer";
 import { FileText, Users, CreditCard, ShieldAlert, Copyright, AlertTriangle, Scale, Gavel, Mail } from "lucide-react";
@@ -155,6 +156,12 @@ const TermsOfService = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO 
+        title="Terms of Service"
+        canonicalUrl="/terms"
+        description="Read FixSense terms of service. Understand your rights and responsibilities when using our AI appliance diagnostics platform."
+        keywords="FixSense terms, terms of service, user agreement, service terms, legal terms"
+      />
       <Header />
       
       <main className="container px-4 py-16">

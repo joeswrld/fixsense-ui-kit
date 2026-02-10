@@ -1,3 +1,4 @@
+import { SEO } from "@/components/SEO";
 import { Header } from "@/components/landing/Header";
 import { Footer } from "@/components/landing/Footer";
 import { Shield, Lock, Eye, UserCheck, Database, Globe, FileText, Mail } from "lucide-react";
@@ -139,6 +140,12 @@ const PrivacyPolicy = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO 
+        title="Privacy Policy"
+        canonicalUrl="/privacy"
+        description="Learn how FixSense protects your data. Our privacy policy covers data collection, GDPR compliance, and your rights regarding personal information."
+        keywords="FixSense privacy, data protection, GDPR compliance, privacy policy, user data rights"
+      />
       <Header />
       
       <main className="container px-4 py-16">

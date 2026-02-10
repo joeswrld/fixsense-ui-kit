@@ -2,13 +2,15 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
+import { SEO } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileSearch, Home, LogOut, Upload, History, Building2, DollarSign, AlertTriangle, Calendar, Shield, Crown } from "lucide-react";
+import { FileSearch, LogOut, Upload, History, Building2, DollarSign, AlertTriangle, Calendar, Shield, Crown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { MaintenanceCostWidget } from "@/components/dashboard/MaintenanceCostWidget";
+import { SubscriptionStatusBanner } from "@/components/dashboard/SubscriptionStatusBanner";
 import { calculateEstimatedSavings } from "@/lib/countrySavingsEstimate";
 
 interface Diagnostic {
@@ -205,6 +207,12 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-accent/10">
+      <SEO 
+        title="Dashboard"
+        canonicalUrl="/dashboard"
+        description="Manage your appliance diagnostics, maintenance schedules, and properties from your FixSense dashboard."
+        noIndex={true}
+      />
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between px-4">
           <Link to="/dashboard" className="flex items-center gap-2 font-bold text-xl">
@@ -239,6 +247,8 @@ const Dashboard = () => {
 
       <main className="container px-4 py-8">
         <div className="max-w-6xl mx-auto space-y-8">
+          <SubscriptionStatusBanner />
+          
           <div>
             <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
             <p className="text-muted-foreground">Welcome back! What would you like to do today?</p>

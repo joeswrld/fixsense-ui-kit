@@ -318,14 +318,22 @@ export type Database = {
           current_period_start: string | null
           diagnostics_used_this_month: number | null
           email: string | null
+          failed_payment_count: number | null
           full_name: string | null
+          grace_period_end: string | null
           id: string
           last_payment_date: string | null
+          last_reconciled_at: string | null
+          last_webhook_at: string | null
+          last_webhook_event: string | null
           monthly_usage_limits: Json | null
           notification_preferences: Json | null
           onboarding_completed: boolean | null
           payment_required: boolean | null
+          paystack_authorization_code: string | null
           paystack_customer_code: string | null
+          paystack_email_token: string | null
+          paystack_plan_code: string | null
           paystack_subscription_code: string | null
           phone: string | null
           push_subscription: Json | null
@@ -344,14 +352,22 @@ export type Database = {
           current_period_start?: string | null
           diagnostics_used_this_month?: number | null
           email?: string | null
+          failed_payment_count?: number | null
           full_name?: string | null
+          grace_period_end?: string | null
           id: string
           last_payment_date?: string | null
+          last_reconciled_at?: string | null
+          last_webhook_at?: string | null
+          last_webhook_event?: string | null
           monthly_usage_limits?: Json | null
           notification_preferences?: Json | null
           onboarding_completed?: boolean | null
           payment_required?: boolean | null
+          paystack_authorization_code?: string | null
           paystack_customer_code?: string | null
+          paystack_email_token?: string | null
+          paystack_plan_code?: string | null
           paystack_subscription_code?: string | null
           phone?: string | null
           push_subscription?: Json | null
@@ -370,14 +386,22 @@ export type Database = {
           current_period_start?: string | null
           diagnostics_used_this_month?: number | null
           email?: string | null
+          failed_payment_count?: number | null
           full_name?: string | null
+          grace_period_end?: string | null
           id?: string
           last_payment_date?: string | null
+          last_reconciled_at?: string | null
+          last_webhook_at?: string | null
+          last_webhook_event?: string | null
           monthly_usage_limits?: Json | null
           notification_preferences?: Json | null
           onboarding_completed?: boolean | null
           payment_required?: boolean | null
+          paystack_authorization_code?: string | null
           paystack_customer_code?: string | null
+          paystack_email_token?: string | null
+          paystack_plan_code?: string | null
           paystack_subscription_code?: string | null
           phone?: string | null
           push_subscription?: Json | null
@@ -443,6 +467,60 @@ export type Database = {
           window_start?: string | null
         }
         Relationships: []
+      }
+      subscription_events: {
+        Row: {
+          created_at: string
+          event_data: Json | null
+          event_type: string
+          id: string
+          new_status: string | null
+          new_tier: string | null
+          paystack_reference: string | null
+          previous_status: string | null
+          previous_tier: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          new_status?: string | null
+          new_tier?: string | null
+          paystack_reference?: string | null
+          previous_status?: string | null
+          previous_tier?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          new_status?: string | null
+          new_tier?: string | null
+          paystack_reference?: string | null
+          previous_status?: string | null
+          previous_tier?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_usage_summary"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       transactions: {
         Row: {

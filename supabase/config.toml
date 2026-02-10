@@ -32,3 +32,18 @@ verify_jwt = false
 
 [functions.send-push-notification]
 verify_jwt = false
+
+[functions.paystack-webhook]
+verify_jwt = false
+
+[functions.paystack-create-subscription]
+verify_jwt = true
+
+[functions.subscription-reconciliation]
+verify_jwt = false
+
+[functions.check-subscription-access]
+verify_jwt = true
+
+[functions.retry-failed-payments]
+verify_jwt = false
