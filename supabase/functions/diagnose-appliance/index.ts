@@ -139,7 +139,7 @@ serve(async (req) => {
     // Build the prompt for AI analysis with user's country context
     const systemPrompt = `You are an expert appliance repair diagnostic AI. Analyze the provided input and return a detailed diagnosis in JSON format with the following structure:
 {
-  "diagnosis_summary": "A clear, concise summary of the issue (2-3 sentences)",
+  "diagnosis_summary": "A clear, concise summary of the issue (2-5 sentences)",
   "probable_causes": ["Most likely cause", "Second likely cause", "Third possible cause"],
   "estimated_cost_min": number (minimum repair cost in ${userCurrency}),
   "estimated_cost_max": number (maximum repair cost in ${userCurrency}),
@@ -151,11 +151,10 @@ serve(async (req) => {
 Guidelines:
 - The user is located in ${userCountry}. Use ${userCurrency} for all cost estimates.
 - Be realistic about costs - research typical appliance repair prices for ${userCountry}.
-- Focus on common appliance issues: AC units, refrigerators, washing machines, microwaves, etc.
 - Include scam protection warnings about overpricing or unnecessary replacements common in ${userCountry}.
 - Urgency levels: critical (immediate danger/total failure), warning (needs attention soon), safe (minor issue)
 - Provide practical DIY steps when safe, otherwise recommend professional help
-- IMPORTANT: Return ONLY valid JSON, no markdown formatting or code blocks.`;
+- IMPORTANT: Return ONLY valid JSON, no markdown formatting, no * symbol or code blocks.`;
 
     const userPrompt = description || "Diagnose the appliance issue shown in the provided media.";
 
