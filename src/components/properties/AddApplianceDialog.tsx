@@ -26,6 +26,12 @@ const applianceTypes = [
   "Microwave",
   "Water Heater",
   "Generator",
+  "Ceiling Fan",
+  "Freezer",
+  "Electric Cooker",
+  "Iron",
+  "Blender",
+  "Television",
   "Other"
 ];
 
@@ -35,6 +41,7 @@ export const AddApplianceDialog = ({ open, onOpenChange, propertyId, onAppliance
   const [brand, setBrand] = useState("");
   const [model, setModel] = useState("");
   const [notes, setNotes] = useState("");
+  const [purchaseDate, setPurchaseDate] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -52,6 +59,7 @@ export const AddApplianceDialog = ({ open, onOpenChange, propertyId, onAppliance
           brand: brand || null,
           model: model || null,
           notes: notes || null,
+          purchase_date: purchaseDate || null,
           status: "good"
         });
 
@@ -67,6 +75,7 @@ export const AddApplianceDialog = ({ open, onOpenChange, propertyId, onAppliance
       setBrand("");
       setModel("");
       setNotes("");
+      setPurchaseDate("");
       onOpenChange(false);
       onApplianceAdded();
     } catch (error) {
@@ -134,6 +143,15 @@ export const AddApplianceDialog = ({ open, onOpenChange, propertyId, onAppliance
                   onChange={(e) => setModel(e.target.value)}
                 />
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="purchaseDate">Purchase Date</Label>
+              <Input
+                id="purchaseDate"
+                type="date"
+                value={purchaseDate}
+                onChange={(e) => setPurchaseDate(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="notes">Notes</Label>
