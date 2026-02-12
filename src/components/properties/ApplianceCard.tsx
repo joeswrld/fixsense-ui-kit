@@ -16,6 +16,7 @@ interface Appliance {
   model: string | null;
   status: string | null;
   notes: string | null;
+  property_id?: string;
 }
 
 interface ApplianceCardProps {
@@ -89,15 +90,26 @@ export const ApplianceCard = ({ appliance, onUpdate }: ApplianceCardProps) => {
               {appliance.notes && (
                 <p className="text-sm text-muted-foreground mt-2 italic">{appliance.notes}</p>
               )}
-              <Button
-                variant="link"
-                size="sm"
-                onClick={() => navigate(`/appliances/${appliance.id}`)}
-                className="px-0 h-auto mt-2"
-              >
-                View Details
-                <ExternalLink className="w-3 h-3 ml-1" />
-              </Button>
+              <div className="flex items-center gap-2 mt-2">
+                <Button
+                  variant="link"
+                  size="sm"
+                  onClick={() => navigate(`/appliances/${appliance.id}`)}
+                  className="px-0 h-auto"
+                >
+                  View Details
+                  <ExternalLink className="w-3 h-3 ml-1" />
+                </Button>
+                <Button
+                  variant="link"
+                  size="sm"
+                  onClick={() => navigate(`/diagnose?propertyId=${appliance.property_id || ''}&applianceId=${appliance.id}`)}
+                  className="px-0 h-auto text-primary"
+                >
+                  <Wrench className="w-3 h-3 mr-1" />
+                  Quick Diagnose
+                </Button>
+              </div>
             </div>
             <Button
               variant="ghost"
