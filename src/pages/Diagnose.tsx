@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Camera, Video, Mic, FileText, Upload, ArrowLeft, Loader2, Lock, Crown, AlertTriangle } from "lucide-react";
+import { Camera, Video, Mic, FileText, Upload, ArrowLeft, Loader2, Lock, Crown, AlertTriangle, Ban } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Progress } from "@/components/ui/progress";
@@ -14,6 +14,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { useUsageEnforcement } from "@/hooks/useUsageEnforcement";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 
 interface Property {
   id: string;
@@ -42,6 +43,7 @@ const Diagnose = () => {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { checkUsage, isLoading: usageLoading, tier, refetchUsage } = useUsageEnforcement();
+  const { isEnabled: isFeatureEnabled, isLoading: flagsLoading } = useFeatureFlags();
 
   useEffect(() => {
     fetchPropertiesAndAppliances();
@@ -86,6 +88,24 @@ const Diagnose = () => {
   ];
 
   const handleSelectType = (type: string) => {
+    // Check feature flags for video and audio
+    if (type === 'video' && !isFeatureEnabled('video_diagnostics')) {
+      toast({
+        title: "Feature Disabled",
+        description: "Video diagnostics are currently disabled by the administrator.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (type === 'audio' && !isFeatureEnabled('audio_diagnostics')) {
+      toast({
+        title: "Feature Disabled",
+        description: "Audio diagnostics are currently disabled by the administrator.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const check = checkUsage(type as 'photo' | 'video' | 'audio' | 'text');
     
     if (check.isLocked) {
@@ -328,7 +348,9 @@ const Diagnose = () => {
                 <div className="grid sm:grid-cols-2 gap-4">
                   {inputTypes.map((type) => {
                     const usageCheck = checkUsage(type.id as 'photo' | 'video' | 'audio' | 'text');
-                    const isDisabled = !usageCheck.canUse || usageLoading;
+                    const featureDisabled = (type.id === 'video' && !isFeatureEnabled('video_diagnostics')) ||
+                                           (type.id === 'audio' && !isFeatureEnabled('audio_diagnostics'));
+                    const isDisabled = !usageCheck.canUse || usageLoading || flagsLoading || featureDisabled;
 
                     return (
                       <Card
@@ -345,7 +367,9 @@ const Diagnose = () => {
                             <div className={`w-14 h-14 rounded-lg flex items-center justify-center ${
                               isDisabled ? 'bg-muted' : 'bg-primary/10'
                             }`}>
-                              {usageCheck.isLocked ? (
+                              {featureDisabled ? (
+                                <Ban className="w-7 h-7 text-muted-foreground" />
+                              ) : usageCheck.isLocked ? (
                                 <Lock className="w-7 h-7 text-muted-foreground" />
                               ) : (
                                 <type.icon className={`w-7 h-7 ${isDisabled ? 'text-muted-foreground' : 'text-primary'}`} />
@@ -354,13 +378,21 @@ const Diagnose = () => {
                             <div className="w-full">
                               <div className="flex items-center justify-center gap-2 mb-1">
                                 <h3 className="font-semibold">{type.label}</h3>
-                                {usageCheck.isLocked && (
+                                {featureDisabled && (
+                                  <Ban className="w-4 h-4 text-muted-foreground" />
+                                )}
+                                {!featureDisabled && usageCheck.isLocked && (
                                   <Lock className="w-4 h-4 text-muted-foreground" />
                                 )}
                               </div>
                               <p className="text-sm text-muted-foreground">{type.description}</p>
                               
-                              {usageCheck.isLocked ? (
+                              {featureDisabled ? (
+                                <div className="mt-3 text-xs text-muted-foreground">
+                                  <Ban className="w-3 h-3 inline mr-1" />
+                                  Temporarily disabled
+                                </div>
+                              ) : usageCheck.isLocked ? (
                                 <div className="mt-3 text-xs text-muted-foreground">
                                   <Lock className="w-3 h-3 inline mr-1" />
                                   Upgrade to unlock
