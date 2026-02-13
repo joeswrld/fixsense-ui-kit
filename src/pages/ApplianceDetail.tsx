@@ -1,31 +1,24 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Loader2, Wrench, Calendar, DollarSign, AlertTriangle, CheckCircle2, AlertCircle, Stethoscope } from "lucide-react";
+import { ArrowLeft, Loader2, Wrench, Calendar, DollarSign, AlertTriangle, CheckCircle2, AlertCircle, Stethoscope, Pencil } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { MaintenanceHistory } from "@/components/properties/MaintenanceHistory";
 import { WarrantyManager } from "@/components/warranties/WarrantyManager";
 import { PredictiveAlerts } from "@/components/predictive/PredictiveAlerts";
 import { Progress } from "@/components/ui/progress";
+import { EditApplianceDialog } from "@/components/properties/EditApplianceDialog";
+import { RepairVsReplaceCalculator } from "@/components/properties/RepairVsReplaceCalculator";
 
 const EXPECTED_LIFESPAN: Record<string, number> = {
-  "Air Conditioner": 15,
-  "Refrigerator": 15,
-  "Washing Machine": 12,
-  "Dryer": 13,
-  "Dishwasher": 10,
-  "Oven": 15,
-  "Microwave": 10,
-  "Water Heater": 12,
-  "Generator": 20,
-  "Ceiling Fan": 15,
-  "Freezer": 15,
-  "Electric Cooker": 12,
-  "Television": 8,
-  "Other": 10,
+  "Air Conditioner": 15, "Refrigerator": 15, "Washing Machine": 12,
+  "Dryer": 13, "Dishwasher": 10, "Oven": 15, "Microwave": 10,
+  "Water Heater": 12, "Generator": 20, "Ceiling Fan": 15,
+  "Freezer": 15, "Electric Cooker": 12, "Television": 8, "Other": 10,
 };
 
 const statusConfig = {
@@ -37,6 +30,8 @@ const statusConfig = {
 const ApplianceDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [editOpen, setEditOpen] = useState(false);
 
   const { data: appliance, isLoading } = useQuery({
     queryKey: ["appliance", id],
@@ -46,15 +41,7 @@ const ApplianceDetail = () => {
 
       const { data, error } = await supabase
         .from("appliances")
-        .select(`
-          *,
-          properties!inner (
-            id,
-            name,
-            address,
-            user_id
-          )
-        `)
+        .select(`*, properties!inner (id, name, address, user_id)`)
         .eq("id", id!)
         .single();
 
@@ -70,7 +57,6 @@ const ApplianceDetail = () => {
         .from("maintenance_history")
         .select("cost")
         .eq("appliance_id", id!);
-
       if (error) throw error;
       return data?.reduce((sum, r) => sum + (r.cost || 0), 0) || 0;
     },
@@ -84,12 +70,15 @@ const ApplianceDetail = () => {
         .from("diagnostics")
         .select("id", { count: "exact" })
         .eq("appliance_id", id!);
-
       if (error) throw error;
       return data?.length || 0;
     },
     enabled: !!id,
   });
+
+  const handleApplianceUpdated = () => {
+    queryClient.invalidateQueries({ queryKey: ["appliance", id] });
+  };
 
   if (isLoading) {
     return (
@@ -119,7 +108,6 @@ const ApplianceDetail = () => {
   const status = statusConfig[appliance.status as keyof typeof statusConfig] || statusConfig.good;
   const StatusIcon = status.icon;
 
-  // Calculate age and lifespan
   const purchaseDate = appliance.purchase_date ? new Date(appliance.purchase_date) : null;
   const ageYears = purchaseDate
     ? Math.round((Date.now() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24 * 365.25) * 10) / 10
@@ -139,18 +127,31 @@ const ApplianceDetail = () => {
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Properties
               </Button>
-              <h1 className="text-3xl font-bold">{appliance.name}</h1>
-              <p className="text-muted-foreground">
-                {appliance.type} • {appliance.properties.name}
-              </p>
+              <div className="flex items-center gap-3">
+                {appliance.photo_url && (
+                  <img src={appliance.photo_url} alt={appliance.name} className="w-16 h-16 rounded-lg object-cover border" />
+                )}
+                <div>
+                  <h1 className="text-3xl font-bold">{appliance.name}</h1>
+                  <p className="text-muted-foreground">
+                    {appliance.type} • {appliance.properties.name}
+                  </p>
+                </div>
+              </div>
             </div>
-            <Button
-              onClick={() => navigate(`/diagnose?propertyId=${appliance.properties.id}&applianceId=${appliance.id}`)}
-              size="lg"
-            >
-              <Stethoscope className="w-5 h-5 mr-2" />
-              Diagnose This Appliance
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setEditOpen(true)}>
+                <Pencil className="w-4 h-4 mr-2" />
+                Edit
+              </Button>
+              <Button
+                onClick={() => navigate(`/diagnose?propertyId=${appliance.properties.id}&applianceId=${appliance.id}`)}
+                size="lg"
+              >
+                <Stethoscope className="w-5 h-5 mr-2" />
+                Diagnose
+              </Button>
+            </div>
           </div>
 
           {/* Health Status Banner */}
@@ -231,17 +232,13 @@ const ApplianceDetail = () => {
                 {appliance.purchase_date && (
                   <div>
                     <dt className="text-sm font-medium text-muted-foreground">Purchase Date</dt>
-                    <dd className="text-sm">
-                      {new Date(appliance.purchase_date).toLocaleDateString()}
-                    </dd>
+                    <dd className="text-sm">{new Date(appliance.purchase_date).toLocaleDateString()}</dd>
                   </div>
                 )}
                 {appliance.next_maintenance_date && (
                   <div>
                     <dt className="text-sm font-medium text-muted-foreground">Next Maintenance</dt>
-                    <dd className="text-sm">
-                      {new Date(appliance.next_maintenance_date).toLocaleDateString()}
-                    </dd>
+                    <dd className="text-sm">{new Date(appliance.next_maintenance_date).toLocaleDateString()}</dd>
                   </div>
                 )}
                 {appliance.notes && (
@@ -254,13 +251,25 @@ const ApplianceDetail = () => {
             </CardContent>
           </Card>
 
+          {/* Repair vs Replace Calculator */}
+          <RepairVsReplaceCalculator
+            applianceType={appliance.type}
+            totalRepairCost={totalCost || 0}
+            purchaseDate={appliance.purchase_date}
+          />
+
           <PredictiveAlerts applianceId={id!} />
-
           <WarrantyManager applianceId={id!} />
-
           <MaintenanceHistory applianceId={id!} />
         </div>
       </main>
+
+      <EditApplianceDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        appliance={appliance}
+        onApplianceUpdated={handleApplianceUpdated}
+      />
     </div>
   );
 };

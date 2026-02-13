@@ -52,6 +52,7 @@ export type Database = {
           name: string
           next_maintenance_date: string | null
           notes: string | null
+          photo_url: string | null
           property_id: string
           purchase_date: string | null
           status: string | null
@@ -68,6 +69,7 @@ export type Database = {
           name: string
           next_maintenance_date?: string | null
           notes?: string | null
+          photo_url?: string | null
           property_id: string
           purchase_date?: string | null
           status?: string | null
@@ -84,6 +86,7 @@ export type Database = {
           name?: string
           next_maintenance_date?: string | null
           notes?: string | null
+          photo_url?: string | null
           property_id?: string
           purchase_date?: string | null
           status?: string | null
