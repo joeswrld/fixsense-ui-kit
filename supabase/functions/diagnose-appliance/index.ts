@@ -340,6 +340,27 @@ Guidelines:
 
     console.log('Diagnostic saved with ID:', diagnostic.id);
 
+    // Auto-update appliance status based on diagnosis urgency
+    if (applianceId && validatedResult.urgency) {
+      const statusMap: Record<string, string> = {
+        critical: 'critical',
+        warning: 'warning',
+        safe: 'good',
+      };
+      const newStatus = statusMap[validatedResult.urgency] || 'good';
+      
+      const { error: statusError } = await supabase
+        .from('appliances')
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq('id', applianceId);
+      
+      if (statusError) {
+        console.error('Error updating appliance status:', statusError);
+      } else {
+        console.log(`Appliance ${applianceId} status updated to: ${newStatus}`);
+      }
+    }
+
     // Track usage
     const { data: profile } = await supabase
       .from('profiles')

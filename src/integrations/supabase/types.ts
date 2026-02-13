@@ -52,6 +52,7 @@ export type Database = {
           name: string
           next_maintenance_date: string | null
           notes: string | null
+          photo_url: string | null
           property_id: string
           purchase_date: string | null
           status: string | null
@@ -68,6 +69,7 @@ export type Database = {
           name: string
           next_maintenance_date?: string | null
           notes?: string | null
+          photo_url?: string | null
           property_id: string
           purchase_date?: string | null
           status?: string | null
@@ -84,6 +86,7 @@ export type Database = {
           name?: string
           next_maintenance_date?: string | null
           notes?: string | null
+          photo_url?: string | null
           property_id?: string
           purchase_date?: string | null
           status?: string | null
@@ -171,6 +174,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      feature_flags: {
+        Row: {
+          created_at: string
+          description: string | null
+          enabled: boolean
+          flag_key: string
+          id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          flag_key: string
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          flag_key?: string
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
       }
       maintenance_history: {
         Row: {
