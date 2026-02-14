@@ -8,6 +8,7 @@ import {
   Settings,
   Menu,
   LogOut,
+  Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +24,7 @@ interface AdminLayoutProps {
 const navItems = [
   { label: "Users", href: "/admin/users", icon: Users },
   { label: "Subscriptions", href: "/admin/subscriptions", icon: CreditCard },
+  { label: "Vendors", href: "/admin/vendors", icon: Building2 },
   { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ];

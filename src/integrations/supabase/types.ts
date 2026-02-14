@@ -501,6 +501,51 @@ export type Database = {
         }
         Relationships: []
       }
+      service_vendors: {
+        Row: {
+          category: string
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_verified: boolean
+          location: string | null
+          logo_url: string | null
+          updated_at: string
+          vendor_name: string
+          whatsapp_link: string | null
+        }
+        Insert: {
+          category: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_verified?: boolean
+          location?: string | null
+          logo_url?: string | null
+          updated_at?: string
+          vendor_name: string
+          whatsapp_link?: string | null
+        }
+        Update: {
+          category?: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_verified?: boolean
+          location?: string | null
+          logo_url?: string | null
+          updated_at?: string
+          vendor_name?: string
+          whatsapp_link?: string | null
+        }
+        Relationships: []
+      }
       subscription_events: {
         Row: {
           created_at: string
