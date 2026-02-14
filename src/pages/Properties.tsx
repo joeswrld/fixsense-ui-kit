@@ -8,7 +8,7 @@ import { AddPropertyDialog } from "@/components/properties/AddPropertyDialog";
 import { PropertyCard } from "@/components/properties/PropertyCard";
 import { AppHeader } from "@/components/AppHeader";
 import { MaintenanceTimeline } from "@/components/properties/MaintenanceTimeline";
-import { VendorDirectory } from "@/components/vendors/VendorDirectory";
+import { ServiceVendorDirectory } from "@/components/vendors/ServiceVendorDirectory";
 import { PredictiveAlerts } from "@/components/predictive/PredictiveAlerts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -277,7 +277,7 @@ const Properties = () => {
               </TabsContent>
 
               <TabsContent value="vendors">
-                <VendorDirectory />
+                <ServiceVendorDirectory />
               </TabsContent>
 
               <TabsContent value="alerts">
